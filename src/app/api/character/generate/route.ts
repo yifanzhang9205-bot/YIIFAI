@@ -67,11 +67,12 @@ export async function POST(request: NextRequest) {
 1. **血缘关系必须一致**：父母和孩子必须同一种族
 2. **家族成员要有相似特征**：同一家庭的人要有种族特征相似性
 3. **避免逻辑错误**：不要出现两个外国父母生了中国孩子的情况
+4. **性别必须明确**：每个角色的性别字段必须准确（男/女/male/female）
 
 请返回JSON格式：
 {
   "relationships": [
-    {"name": "角色名", "role": "角色类型（主角/配角/等）", "relationship": "与他人的关系（如：父亲、母亲、儿子、朋友等）", "age": "年龄", "gender": "性别"}
+    {"name": "角色名", "role": "角色类型（主角/配角/等）", "relationship": "与他人的关系（如：父亲、母亲、儿子、朋友等）", "age": "年龄", "gender": "性别（必须明确：男/女）"}
   ],
   "unifiedSetting": {
     "ethnicity": "统一的种族/族裔（必须具体，如：东亚人、白人、黑人、拉丁裔等，如果有多人混血请明确说明）",
@@ -85,12 +86,12 @@ export async function POST(request: NextRequest) {
       "relationship": "关系描述",
       "ethnicity": "种族",
       "age": "年龄",
-      "gender": "性别",
+      "gender": "性别（必须明确：男/女）",
       "description": "角色背景和性格",
-      "appearance": "详细外貌描述（必须包含统一的种族特征）",
+      "appearance": "详细外貌描述（必须包含：1.统一的种族特征 2.明确的性别特征）",
       "outfit": "服装描述",
       "expression": "常用表情",
-      "prompt": "英文生图提示词（必须包含：1.统一的种族关键词 2.统一的画风关键词 3.家族共同特征 4.个人独特特征）"
+      "prompt": "英文生图提示词（必须包含：1.明确的性别关键词 man/male 或 woman/female 2.统一的种族关键词 3.统一的画风关键词 4.家族共同特征 5.个人独特特征）"
     }
   ]
 }
@@ -100,7 +101,10 @@ export async function POST(request: NextRequest) {
 类型：${script.genre}
 人物列表：${allCharacters.join(', ')}
 
-请仔细分析人物关系，确保种族和血缘关系的一致性。`;
+请仔细分析人物关系，确保：
+1. 种族和血缘关系的一致性
+2. 性别识别准确（父亲/儿子=男性，母亲/女儿=女性）
+3. prompt中必须包含明确的性别关键词`;
 
     const relationshipMessages = [
       { role: 'system' as const, content: '你是专业的人物关系分析师，确保逻辑一致性。' },
@@ -140,11 +144,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 检查性别逻辑错误
+    characters.forEach((c: CharacterInfo) => {
+      const gender = c.gender.toLowerCase();
+      const relationship = c.relationship.toLowerCase();
+
+      // 父亲/儿子必须男性
+      if ((relationship.includes('父亲') || relationship.includes('father') || relationship.includes('儿子') || relationship.includes('son')) &&
+          !(gender.includes('男') || gender.includes('male') || gender.includes('man'))) {
+        console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为男性`);
+        c.gender = '男';
+      }
+
+      // 母亲/女儿必须女性
+      if ((relationship.includes('母亲') || relationship.includes('mother') || relationship.includes('女儿') || relationship.includes('daughter')) &&
+          !(gender.includes('女') || gender.includes('female') || gender.includes('woman'))) {
+        console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为女性`);
+        c.gender = '女';
+      }
+    });
+
     // 步骤4：为每个人物生成设定图（统一高度 720x1280）
     const characterImages: string[] = [];
 
     for (const character of characters) {
-      console.log(`生成人物设定图：${character.name}（种族：${character.ethnicity}）`);
+      console.log(`生成人物设定图：${character.name}（种族：${character.ethnicity}，性别：${character.gender}）`);
 
       // 优化 prompt，确保包含统一种族和画风
       const ethnicityMap: Record<string, string> = {
@@ -157,8 +181,21 @@ export async function POST(request: NextRequest) {
 
       const ethnicityKeyword: string = ethnicityMap[unifiedEthnicity] || 'mixed race';
 
-      // 确保包含所有一致性要素
-      const unifiedPrompt = `${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.artStyleKeywords}, ${characterData.unifiedSetting.familyTraits}`;
+      // 添加明确的性别关键词
+      let genderKeyword = '';
+      const gender = character.gender.toLowerCase();
+      if (gender.includes('男') || gender.includes('male') || gender.includes('man')) {
+        genderKeyword = 'man, male';
+      } else if (gender.includes('女') || gender.includes('female') || gender.includes('woman')) {
+        genderKeyword = 'woman, female';
+      } else {
+        // 如果性别不明确，默认为男性（或可以报错）
+        console.warn(`角色${character.name}性别不明确：${character.gender}，默认使用男性`);
+        genderKeyword = 'man, male';
+      }
+
+      // 确保包含所有一致性要素，性别关键词放在最前面
+      const unifiedPrompt = `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.artStyleKeywords}, ${characterData.unifiedSetting.familyTraits}`;
 
       const imageResponse = await imageClient.generate({
         prompt: unifiedPrompt,
