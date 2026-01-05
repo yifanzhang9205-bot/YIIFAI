@@ -47,6 +47,20 @@ export async function POST(request: NextRequest) {
     const llmClient = new LLMClient(config);
     const imageClient = new ImageGenerationClient(config);
 
+    // 定义画风关键词映射（确保前后一致）
+    const artStyleKeywordsMap: Record<string, string> = {
+      '写实风格': 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic',
+      '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
+      '动漫风格': 'anime style, cel shading, vivid colors, manga, detailed',
+      '漫画风格': 'manga style, comic style, black and white manga, detailed line art, anime',
+      '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
+      '油画风格': 'oil painting, textured, classic art, oil brushstrokes, rich colors',
+      '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
+    };
+
+    // 获取当前画风的关键词
+    const currentArtStyleKeywords = artStyleKeywordsMap[artStyle] || artStyleKeywordsMap['写实风格'];
+
     // 步骤1：提取所有人物
     const allCharacters = Array.from(new Set(
       script.scenes.flatMap((s: any) => s.characters || [])
@@ -100,11 +114,20 @@ export async function POST(request: NextRequest) {
 标题：${script.title}
 类型：${script.genre}
 人物列表：${allCharacters.join(', ')}
+画风选择：${artStyle}
+对应英文关键词：${currentArtStyleKeywords}
+
+重要提示：
+- 在生成每个人物的 prompt 时，**必须**包含画风关键词："${currentArtStyleKeywords}"
+- 画风关键词是强制性的，不能省略
+- prompt结构应为：性别关键词 + 画风关键词 + 种族关键词 + 个人特征 + 家族特征
 
 请仔细分析人物关系，确保：
 1. 种族和血缘关系的一致性
 2. 性别识别准确（父亲/儿子=男性，母亲/女儿=女性）
-3. prompt中必须包含明确的性别关键词`;
+3. prompt中必须包含明确的性别关键词
+4. prompt中必须包含画风关键词：${currentArtStyleKeywords}
+`;
 
     const relationshipMessages = [
       { role: 'system' as const, content: '你是专业的人物关系分析师，确保逻辑一致性。' },
@@ -164,6 +187,22 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // 检查prompt是否包含画风关键词
+    characters.forEach((c: CharacterInfo) => {
+      const promptLower = c.prompt.toLowerCase();
+
+      // 检查是否包含画风关键词
+      const hasArtStyle = currentArtStyleKeywords.split(',').some(keyword =>
+        promptLower.includes(keyword.trim().toLowerCase())
+      );
+
+      if (!hasArtStyle) {
+        console.warn(`角色${c.name}的prompt缺少画风关键词，强制添加`);
+        // 强制在开头添加画风关键词
+        c.prompt = `${currentArtStyleKeywords}, ${c.prompt}`;
+      }
+    });
+
     // 步骤4：为每个人物生成设定图（统一高度 720x1280）
     const characterImages: string[] = [];
 
@@ -194,8 +233,8 @@ export async function POST(request: NextRequest) {
         genderKeyword = 'man, male';
       }
 
-      // 确保包含所有一致性要素，性别关键词放在最前面
-      const unifiedPrompt = `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.artStyleKeywords}, ${characterData.unifiedSetting.familyTraits}`;
+      // 确保包含所有一致性要素，性别和画风关键词放在最前面
+      const unifiedPrompt = `${genderKeyword}, ${currentArtStyleKeywords}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}`;
 
       const imageResponse = await imageClient.generate({
         prompt: unifiedPrompt,

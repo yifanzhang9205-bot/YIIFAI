@@ -47,6 +47,20 @@ export async function POST(request: NextRequest) {
     const config = new Config();
     const client = new LLMClient(config);
 
+    // 定义画风关键词映射（确保前后一致）
+    const artStyleKeywordsMap: Record<string, string> = {
+      '写实风格': 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic',
+      '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
+      '动漫风格': 'anime style, cel shading, vivid colors, manga, detailed',
+      '漫画风格': 'manga style, comic style, black and white manga, detailed line art, anime',
+      '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
+      '油画风格': 'oil painting, textured, classic art, oil brushstrokes, rich colors',
+      '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
+    };
+
+    // 获取当前画风的关键词
+    const currentArtStyleKeywords = artStyleKeywordsMap[artStyle] || artStyleKeywordsMap['写实风格'];
+
     const systemPrompt = `你是一个资深影视分镜师和导演，精通镜头语言和视觉叙事。
 你的任务是将剧本转化为专业、精准、可直接用于视频制作的分镜脚本。
 
@@ -147,8 +161,13 @@ export async function POST(request: NextRequest) {
 ${scriptInfo}
 
 画风选择：${artStyle}
+对应英文关键词：${currentArtStyleKeywords}
 
-请生成专业分镜脚本，确保镜头语言精准、videoPrompt 适合AI视频生成，返回JSON格式。`;
+重要提示：
+- 在生成每个场景的 prompt 时，**必须**在开头包含画风关键词："${currentArtStyleKeywords}"
+- 画风关键词是强制性的，不能省略
+
+请生成专业分镜脚本，确保镜头语言精准、videoPrompt 适合AI视频生成，**prompt必须包含画风关键词**，返回JSON格式。`;
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
@@ -164,6 +183,25 @@ ${scriptInfo}
     }
 
     const storyboard: StoryboardScript = JSON.parse(jsonMatch[0]);
+
+    // 自检：确保每个场景的prompt包含画风关键词
+    storyboard.scenes.forEach(scene => {
+      const promptLower = scene.prompt.toLowerCase();
+
+      // 检查是否包含画风关键词
+      const hasArtStyle = currentArtStyleKeywords.split(',').some(keyword =>
+        promptLower.includes(keyword.trim().toLowerCase())
+      );
+
+      if (!hasArtStyle) {
+        console.warn(`场景${scene.sceneNumber}的prompt缺少画风关键词，强制添加`);
+        // 强制在开头添加画风关键词
+        scene.prompt = `${currentArtStyleKeywords}, ${scene.prompt}`;
+      }
+    });
+
+    // 确保artStyle字段正确
+    storyboard.artStyle = artStyle;
 
     return NextResponse.json({
       success: true,
