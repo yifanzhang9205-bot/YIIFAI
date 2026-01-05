@@ -1,65 +1,250 @@
-import type { Metadata } from "next";
+'use client';
 
-export const metadata: Metadata = {
-  title: "扣子编程 - AI 开发伙伴",
-  description: "扣子编程，你的 AI 开发伙伴已就位",
-};
+import { useState } from 'react';
+
+interface Scene {
+  description: string;
+  duration: number;
+}
+
+interface VideoScript {
+  theme: string;
+  totalDuration: number;
+  scenes: Scene[];
+}
+
+interface GenerateResponse {
+  success: boolean;
+  script?: VideoScript;
+  imageUrls?: string[];
+  message?: string;
+  error?: string;
+}
 
 export default function Home() {
+  const [theme, setTheme] = useState('');
+  const [duration, setDuration] = useState(5);
+  const [style, setStyle] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<GenerateResponse | null>(null);
+
+  const handleGenerate = async () => {
+    if (!theme.trim()) {
+      alert('请输入视频主题');
+      return;
+    }
+
+    setIsGenerating(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/video/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          theme: theme.trim(),
+          duration,
+          style: style.trim() || undefined,
+        }),
+      });
+
+      const data: GenerateResponse = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({
+        success: false,
+        error: error instanceof Error ? error.message : '生成失败',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white text-black transition-colors duration-300 dark:bg-black dark:text-white">
-      {/* 主容器 */}
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between px-16 py-32 sm:items-start">
-        {/* 头部：Logo 和 产品名称 */}
-        <div className="flex items-center gap-3">
-          {/* 注意：生产环境建议使用 next/image 并配置 remotePatterns */}
-          <img
-            className="dark:invert"
-            src="https://lf3-static.bytednsdoc.com/obj/eden-cn/hkpzboz/coze_logo.png"
-            alt="扣子编程 Logo"
-            width={40}
-            height={40}
-            style={{ width: "40px", height: "40px", objectFit: "contain" }}
-          />
-          <span className="text-xl font-bold tracking-tight text-black dark:text-zinc-50">
-            扣子编程
-          </span>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* 头部 */}
+      <header className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/50">
+        <div className="mx-auto max-w-6xl px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">AI 短视频生成器</span>
+          </div>
         </div>
+      </header>
 
-        {/* 中间内容区：主标题和副标题 */}
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-black dark:text-zinc-50">
-            扣子编程，你的 AI 开发伙伴已就位
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            当前是空白入口文件，项目正在开发中，请稍候...
-            <br />
-            开发完成后界面将自动更新。如未自动更新成功，可以手动点击右上角刷新或重启按钮查看效果。
-          </p>
-        </div>
+      {/* 主内容 */}
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        {/* 输入区域 */}
+        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            创建你的短视频
+          </h2>
 
-        {/* 底部按钮区 */}
-        <div className="flex w-full flex-col gap-4 text-base font-medium sm:w-auto sm:flex-row">
-          {/* 按钮 1：前往首页 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center gap-2 rounded-full bg-black px-8 text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 md:w-auto"
-            href="https://code.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* 主题输入 */}
+          <div className="mb-4">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              视频主题
+            </label>
+            <input
+              type="text"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              placeholder="例如：一只可爱的小猫在花园里玩耍"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              disabled={isGenerating}
+            />
+          </div>
+
+          {/* 时长和风格 */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* 时长选择 */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                视频时长: {duration}秒
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="15"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value))}
+                className="w-full accent-purple-500"
+                disabled={isGenerating}
+              />
+              <div className="mt-1 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>1秒</span>
+                <span>15秒</span>
+              </div>
+            </div>
+
+            {/* 风格选择 */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                视频风格（可选）
+              </label>
+              <input
+                type="text"
+                value={style}
+                onChange={(e) => setStyle(e.target.value)}
+                placeholder="例如：卡通风格、写实风格、水彩风格"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                disabled={isGenerating}
+              />
+            </div>
+          </div>
+
+          {/* 生成按钮 */}
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || !theme.trim()}
+            className="mt-6 w-full rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 font-medium text-white transition-all hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            前往首页
-          </a>
-
-          {/* 按钮 2：查看文档 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center rounded-full border border-solid border-black/[.08] px-8 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-auto"
-            href="https://docs.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            查看文档
-          </a>
+            {isGenerating ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                生成中...
+              </span>
+            ) : (
+              '生成短视频'
+            )}
+          </button>
         </div>
+
+        {/* 结果展示 */}
+        {result && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            {result.success ? (
+              <>
+                {/* 成功状态 */}
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                    <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    生成成功！
+                  </h3>
+                </div>
+
+                {/* 提示信息 */}
+                {result.message && (
+                  <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                    {result.message}
+                  </div>
+                )}
+
+                {/* 脚本展示 */}
+                {result.script && (
+                  <div className="mb-6">
+                    <h4 className="mb-3 font-medium text-gray-900 dark:text-white">视频脚本</h4>
+                    <div className="space-y-2">
+                      {result.script.scenes.map((scene, index) => (
+                        <div key={index} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                          <div className="flex items-start gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-medium text-purple-600 dark:bg-purple-900 dark:text-purple-300">
+                              {index + 1}
+                            </span>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {scene.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 图片序列预览 */}
+                {result.imageUrls && result.imageUrls.length > 0 && (
+                  <div>
+                    <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
+                      场景图片 ({result.imageUrls.length}张)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                      {result.imageUrls.map((url, index) => (
+                        <div key={index} className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
+                          <img
+                            src={url}
+                            alt={`场景 ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-center text-xs text-white">
+                            场景 {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* 失败状态 */
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
+                  <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">生成失败</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {result.error || '未知错误'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
