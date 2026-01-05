@@ -111,6 +111,8 @@ interface VideoPrompts {
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('requirement');
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
 
   // 状态数据
@@ -133,6 +135,17 @@ export default function Home() {
     '像素风格',
   ];
 
+  // 更新加载状态
+  const updateLoading = (loading: boolean, text?: string, progress?: { current: number; total: number }) => {
+    setLoading(loading);
+    setLoadingText(text || '');
+    if (progress) {
+      setLoadingProgress(progress);
+    } else {
+      setLoadingProgress({ current: 0, total: 0 });
+    }
+  };
+
   // 生成剧本
   const generateScript = async () => {
     if (!requirement.trim()) {
@@ -140,8 +153,7 @@ export default function Home() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在生成剧本...');
 
     try {
       const response = await fetch('/api/script/generate', {
@@ -164,14 +176,13 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
   // 修改剧本
   const editScript = async () => {
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在修改剧本...');
 
     try {
       const response = await fetch('/api/script/generate', {
@@ -194,7 +205,7 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '修改失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
@@ -202,8 +213,7 @@ export default function Home() {
   const confirmScript = async () => {
     if (!script) return;
 
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在生成分镜脚本...');
 
     try {
       const response = await fetch('/api/storyboard/generate', {
@@ -226,7 +236,7 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成分镜失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
@@ -234,8 +244,7 @@ export default function Home() {
   const generateCharacters = async () => {
     if (!script || !storyboard) return;
 
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在生成人物设定...');
 
     try {
       const response = await fetch('/api/character/generate', {
@@ -258,7 +267,7 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成人物设定失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
@@ -266,8 +275,10 @@ export default function Home() {
   const confirmCharacters = async () => {
     if (!storyboard || !characterDesign) return;
 
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在生成关键帧（可能需要几分钟）...', {
+      current: 0,
+      total: storyboard.scenes.length
+    });
 
     try {
       const response = await fetch('/api/keyframes/generate', {
@@ -290,7 +301,7 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成关键帧失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
@@ -298,8 +309,7 @@ export default function Home() {
   const generateVideoPrompts = async () => {
     if (!script || !storyboard || !characterDesign || !keyframes) return;
 
-    setLoading(true);
-    setError(null);
+    updateLoading(true, '正在生成视频提示词...');
 
     try {
       const response = await fetch('/api/video-prompt/generate', {
@@ -324,13 +334,15 @@ export default function Home() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成视频提示词失败');
     } finally {
-      setLoading(false);
+      updateLoading(false);
     }
   };
 
-  // 下载所有关键帧
+  // 打包下载所有资源（关键帧+提示词）
   const downloadAll = async () => {
     if (!keyframes || !script) return;
+
+    updateLoading(true, '正在打包下载...');
 
     try {
       const response = await fetch('/api/download', {
@@ -338,6 +350,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           keyframes,
+          videoPrompts,
           scriptTitle: script.title,
         }),
       });
@@ -351,14 +364,26 @@ export default function Home() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${script.title}_keyframes.zip`;
+      a.download = `${script.title}_素材包.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
       alert(err instanceof Error ? err.message : '打包下载失败');
+    } finally {
+      updateLoading(false);
     }
+  };
+
+  // 单独下载某个关键帧
+  const downloadSingleKeyframe = (sceneNumber: number, imageUrl: string) => {
+    const a = document.createElement('a');
+    a.href = imageUrl;
+    a.download = `scene_${String(sceneNumber).padStart(2, '0')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // 复制文本
@@ -367,138 +392,240 @@ export default function Home() {
     alert(`已复制${label}到剪贴板`);
   };
 
+  // 获取当前步骤序号
+  const getCurrentStepIndex = () => {
+    const steps: Step[] = ['requirement', 'script', 'storyboard', 'character', 'keyframes', 'video-prompts', 'download'];
+    return steps.indexOf(currentStep);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 头部 */}
-      <header className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/50">
-        <div className="mx-auto max-w-6xl px-4 py-4">
+      <header className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/50 sticky top-0 z-50">
+        <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/30">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2m0 2v2m0-2h10M7 4H4a1 1 0 00-1 1v14a1 1 0 001 1h16a1 1 0 001-1V5a1 1 0 00-1-1h-3m-9 10l3 3m0 0l3-3m-3 3V8" />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">AI 剧本分镜视频生成器</span>
+              <div>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">AI 剧本分镜视频生成器</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">从创意到视频提示词的完整工作流</p>
+              </div>
             </div>
 
             {/* 步骤指示器 */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               {[
-                { step: 'requirement', label: '需求' },
-                { step: 'script', label: '剧本' },
-                { step: 'storyboard', label: '分镜' },
-                { step: 'character', label: '人物' },
-                { step: 'keyframes', label: '关键帧' },
-                { step: 'video-prompts', label: '视频提示词' },
-                { step: 'download', label: '完成' },
+                { step: 'requirement', label: '需求', short: '需求' },
+                { step: 'script', label: '剧本', short: '剧本' },
+                { step: 'storyboard', label: '分镜', short: '分镜' },
+                { step: 'character', label: '人物', short: '人物' },
+                { step: 'keyframes', label: '关键帧', short: '关键帧' },
+                { step: 'video-prompts', label: '提示词', short: '提示词' },
+                { step: 'download', label: '完成', short: '完成' },
               ].map((item, index) => (
                 <div key={item.step} className="flex items-center gap-2">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all ${
                       currentStep === item.step
-                        ? 'bg-blue-500 text-white'
-                        : index < ['requirement', 'script', 'storyboard', 'character', 'keyframes', 'video-prompts', 'download'].indexOf(currentStep)
+                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                        : index < getCurrentStepIndex()
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}
                   >
-                    {index + 1}
+                    {index < getCurrentStepIndex() ? (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      index + 1
+                    )}
                   </div>
-                  <span className={`text-sm ${
+                  <span className={`text-sm font-medium transition-all ${
                     currentStep === item.step
-                      ? 'text-blue-600 dark:text-blue-400 font-medium'
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : index < getCurrentStepIndex()
+                      ? 'text-green-600 dark:text-green-400'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                    {item.label}
+                    {item.short}
                   </span>
-                  {index < 6 && <div className="h-px w-8 bg-gray-300 dark:bg-gray-600" />}
+                  {index < 6 && <div className={`h-px w-6 transition-all ${index < getCurrentStepIndex() ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />}
                 </div>
               ))}
             </div>
           </div>
+
+          {/* 进度条 */}
+          {loading && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{loadingText}</span>
+                {loadingProgress.total > 0 && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {loadingProgress.current} / {loadingProgress.total}
+                  </span>
+                )}
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+                {loadingProgress.total > 0 ? (
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+                    style={{ width: `${(loadingProgress.current / loadingProgress.total) * 100}%` }}
+                  />
+                ) : (
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse" />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* 主内容 */}
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+            <div className="flex items-start gap-3">
+              <svg className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="font-medium text-red-900 dark:text-red-300">出错了</p>
+                <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
         {/* 步骤1：需求输入 */}
         {currentStep === 'requirement' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-              第一步：输入创作需求
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+              开始你的创作
             </h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">
+              描述你想要创作的视频内容，AI 将为你生成完整的剧本、分镜和视频提示词
+            </p>
             <textarea
               value={requirement}
               onChange={(e) => setRequirement(e.target.value)}
               placeholder="描述你想要创作的剧本内容，例如：
-- 一个关于都市爱情的故事
+
+一个关于都市爱情的故事
 - 主角是一个年轻的程序员
 - 发生在咖啡馆的相遇
 - 温馨治愈的风格
+- 时长约 45 秒
 
 请尽可能详细地描述你的创意..."
-              className="min-h-[200px] w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="min-h-[250px] w-full rounded-xl border-2 border-gray-200 px-6 py-4 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               disabled={loading}
             />
-            <button
-              onClick={generateScript}
-              disabled={loading || !requirement.trim()}
-              className="mt-4 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? '生成中...' : '生成剧本'}
-            </button>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={generateScript}
+                disabled={loading || !requirement.trim()}
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    生成中...
+                  </>
+                ) : (
+                  <>
+                    开始创作
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {/* 步骤2：剧本确认 */}
         {currentStep === 'script' && script && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
               第二步：确认剧本
             </h2>
-            <div className="mb-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
-              <p className="font-medium text-gray-900 dark:text-white">{script.title}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{script.genre}</p>
-              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{script.logline}</p>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{script.summary}</p>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
-                <div><span className="font-medium">情感弧线：</span>{script.emotionalArc}</div>
-                <div><span className="font-medium">目标受众：</span>{script.targetAudience}</div>
-                <div><span className="font-medium">视觉风格：</span>{script.visualStyle}</div>
+            <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{script.title}</h3>
+                  <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-1">{script.genre}</p>
+                </div>
+                <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+                  {script.scenes.length} 场景
+                </div>
+              </div>
+              <p className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">{script.logline}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{script.summary}</p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">情感弧线</div>
+                  <div className="font-medium text-gray-700 dark:text-gray-300">{script.emotionalArc}</div>
+                </div>
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">目标受众</div>
+                  <div className="font-medium text-gray-700 dark:text-gray-300">{script.targetAudience}</div>
+                </div>
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">视觉风格</div>
+                  <div className="font-medium text-gray-700 dark:text-gray-300">{script.visualStyle}</div>
+                </div>
               </div>
             </div>
-            <div className="mb-4">
-              <label className="mb-2 block font-medium text-gray-700 dark:text-gray-300">
-                剧本JSON（可直接修改）
+            <div className="mb-6">
+              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+                剧本 JSON（可直接修改）
               </label>
               <textarea
                 value={scriptEdit}
                 onChange={(e) => setScriptEdit(e.target.value)}
-                className="min-h-[300px] w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="min-h-[300px] w-full rounded-xl border-2 border-gray-200 px-6 py-4 font-mono text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 disabled={loading}
               />
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <button
                 onClick={editScript}
                 disabled={loading}
-                className="rounded-lg border border-gray-300 px-6 py-2 font-medium text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
               >
                 {loading ? '修改中...' : '修改剧本'}
               </button>
               <button
                 onClick={confirmScript}
                 disabled={loading}
-                className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-2 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
               >
-                {loading ? '生成中...' : '确认，选择画风'}
+                {loading ? '生成中...' : (
+                  <>
+                    确认，选择画风
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -506,22 +633,22 @@ export default function Home() {
 
         {/* 步骤3：画风选择和分镜 */}
         {currentStep === 'storyboard' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
               第三步：选择画风并生成分镜
             </h2>
-            <div className="mb-6">
-              <label className="mb-2 block font-medium text-gray-700 dark:text-gray-300">
+            <div className="mb-8">
+              <label className="mb-4 block font-medium text-gray-700 dark:text-gray-300">
                 选择画风
               </label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                 {artStyles.map((style) => (
                   <button
                     key={style}
                     onClick={() => setSelectedStyle(style)}
-                    className={`rounded-lg border-2 px-4 py-3 font-medium transition-all ${
+                    className={`rounded-xl border-2 px-6 py-4 font-medium transition-all ${
                       selectedStyle === style
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 shadow-md'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -531,19 +658,19 @@ export default function Home() {
               </div>
             </div>
             {storyboard && (
-              <div className="mb-6">
-                <h3 className="mb-3 font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-8">
+                <h3 className="mb-4 font-semibold text-gray-700 dark:text-gray-300">
                   分镜脚本预览
                 </h3>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {storyboard.scenes.slice(0, 4).map((scene) => (
-                    <div key={scene.sceneNumber} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                    <div key={scene.sceneNumber} className="rounded-xl bg-gray-50 p-4 dark:bg-gray-700 border border-gray-100 dark:border-gray-600">
                       <div className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-sm font-bold text-white">
                           {scene.sceneNumber}
                         </span>
                         <div className="flex-1">
-                          <p className="mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
                             {scene.shotType} · {scene.cameraAngle} · {scene.cameraMovement}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
@@ -554,42 +681,60 @@ export default function Home() {
                     </div>
                   ))}
                   {storyboard.scenes.length > 4 && (
-                    <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                      还有 {storyboard.scenes.length - 4} 场...
-                    </p>
+                    <div className="text-center py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        还有 {storyboard.scenes.length - 4} 场...
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
             )}
-            <button
-              onClick={generateCharacters}
-              disabled={loading}
-              className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
-            >
-              {loading ? '生成中...' : '确认，生成人物设定'}
-            </button>
+            <div className="flex justify-end">
+              <button
+                onClick={generateCharacters}
+                disabled={loading}
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+              >
+                {loading ? '生成中...' : (
+                  <>
+                    确认，生成人物设定
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {/* 步骤4：人物设定 */}
         {currentStep === 'character' && characterDesign && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
               第四步：确认人物设定
             </h2>
-            <div className="mb-4 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                <span className="font-medium">统一种族：</span>{characterDesign.unifiedSetting.ethnicity}
-                {' '}|{' '}
-                <span className="font-medium">画风关键词：</span>{characterDesign.unifiedSetting.artStyleKeywords}
-                {' '}|{' '}
-                <span className="font-medium">家族特征：</span>{characterDesign.unifiedSetting.familyTraits}
-              </p>
+            <div className="mb-8 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">统一种族</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{characterDesign.unifiedSetting.ethnicity}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">画风关键词</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{characterDesign.unifiedSetting.artStyleKeywords}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">家族特征</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{characterDesign.unifiedSetting.familyTraits}</span>
+                </div>
+              </div>
             </div>
-            <div className="mb-6 grid gap-6 sm:grid-cols-2">
+            <div className="mb-8 grid gap-6 sm:grid-cols-2">
               {characterDesign.characters.map((character, index) => (
-                <div key={character.name} className="rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="aspect-[720/1280] w-full overflow-hidden">
+                <div key={character.name} className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
+                  <div className="aspect-[720/1280] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                     <img
                       src={characterDesign.characterImages[index]}
                       alt={character.name}
@@ -597,59 +742,94 @@ export default function Home() {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-medium text-gray-900 dark:text-white">{character.name}</h3>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{character.description}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">{character.name}</h3>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{character.description}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <button
-              onClick={confirmCharacters}
-              disabled={loading}
-              className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
-            >
-              {loading ? '生成中（可能需要几分钟）...' : '确认，生成关键帧'}
-            </button>
+            <div className="flex justify-end">
+              <button
+                onClick={confirmCharacters}
+                disabled={loading}
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+              >
+                {loading ? '生成中（可能需要几分钟）...' : (
+                  <>
+                    确认，生成关键帧
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {/* 步骤5：关键帧 */}
         {currentStep === 'keyframes' && keyframes && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-              第五步：关键帧预览（全部统一高度 720×1280）
-            </h2>
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                第五步：关键帧预览
+              </h2>
+              <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-xs font-medium text-green-700 dark:text-green-300">
+                720×1280 统一尺寸
+              </div>
+            </div>
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {keyframes.map((keyframe) => (
-                <div key={keyframe.sceneNumber} className="group relative aspect-[720/1280] overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
+                <div key={keyframe.sceneNumber} className="group relative aspect-[720/1280] overflow-hidden rounded-xl border-2 border-gray-200 dark:border-gray-600 shadow-lg">
                   <img
                     src={keyframe.imageUrl}
                     alt={`场景${keyframe.sceneNumber}`}
                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 text-center text-white">
-                    <span className="text-sm font-medium">场景 {keyframe.sceneNumber}</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-bold text-sm">场景 {keyframe.sceneNumber}</span>
+                      <button
+                        onClick={() => downloadSingleKeyframe(keyframe.sceneNumber, keyframe.imageUrl)}
+                        className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur-sm"
+                        title="下载此关键帧"
+                      >
+                        <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between items-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                共 {keyframes.length} 个关键帧，所有图片尺寸均为 720×1280，高度完全一致
+                共 {keyframes.length} 个关键帧，使用 image-to-image 技术保持人物一致性
               </p>
               <div className="flex gap-4">
                 <button
                   onClick={downloadAll}
-                  className="rounded-lg border border-blue-500 bg-blue-50 px-6 py-3 font-medium text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                  className="rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 flex items-center gap-2"
                 >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
                   打包下载关键帧
                 </button>
                 <button
                   onClick={generateVideoPrompts}
                   disabled={loading}
-                  className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
                 >
-                  {loading ? '生成中...' : '生成视频提示词'}
+                  {loading ? '生成中...' : (
+                    <>
+                      生成视频提示词
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -658,25 +838,40 @@ export default function Home() {
 
         {/* 步骤6：视频提示词 */}
         {currentStep === 'video-prompts' && videoPrompts && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-              第六步：视频生成提示词（适配Sora、Runway、Pika、Kling等）
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
+              第六步：视频生成提示词
             </h2>
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              已针对 Sora、Runway、Pika、Kling 等工具优化
+            </p>
 
             {/* 整体风格 */}
-            <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
-              <h3 className="mb-3 font-medium text-gray-900 dark:text-white">整体风格建议</h3>
-              <div className="grid gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <div><span className="font-medium">视觉风格：</span>{videoPrompts.overallStyle.visualStyle}</div>
-                <div><span className="font-medium">色调：</span>{videoPrompts.overallStyle.colorPalette}</div>
-                <div><span className="font-medium">运动风格：</span>{videoPrompts.overallStyle.motionStyle}</div>
-                <div><span className="font-medium">音效氛围：</span>{videoPrompts.overallStyle.audioAtmosphere}</div>
+            <div className="mb-8 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6 dark:from-blue-900/20 dark:to-purple-900/20">
+              <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">整体风格建议</h3>
+              <div className="grid gap-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">视觉风格</span>
+                  <span className="text-gray-900 dark:text-white">{videoPrompts.overallStyle.visualStyle}</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">色调</span>
+                  <span className="text-gray-900 dark:text-white">{videoPrompts.overallStyle.colorPalette}</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">运动风格</span>
+                  <span className="text-gray-900 dark:text-white">{videoPrompts.overallStyle.motionStyle}</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">音效氛围</span>
+                  <span className="text-gray-900 dark:text-white">{videoPrompts.overallStyle.audioAtmosphere}</span>
+                </div>
               </div>
             </div>
 
             {/* 场景选择 */}
-            <div className="mb-6">
-              <h3 className="mb-3 font-medium text-gray-700 dark:text-gray-300">
+            <div className="mb-8">
+              <h3 className="mb-4 font-semibold text-gray-700 dark:text-gray-300">
                 选择场景查看详细提示词
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -684,9 +879,9 @@ export default function Home() {
                   <button
                     key={scene.sceneNumber}
                     onClick={() => setSelectedPromptScene(scene.sceneNumber)}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                       selectedPromptScene === scene.sceneNumber
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -697,120 +892,148 @@ export default function Home() {
             </div>
 
             {/* 详细提示词 */}
-            {selectedPromptScene && (
-              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-600">
+            {selectedPromptScene && keyframes && (
+              <div className="rounded-xl border-2 border-gray-200 p-6 dark:border-gray-600">
                 {(() => {
                   const scene = videoPrompts.scenes.find(s => s.sceneNumber === selectedPromptScene);
-                  if (!scene) return null;
+                  const keyframe = keyframes.find(k => k.sceneNumber === selectedPromptScene);
+                  if (!scene || !keyframe) return null;
 
                   return (
                     <>
-                      <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
-                        场景 {scene.sceneNumber} - {scene.sceneDescription}
-                      </h4>
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                            场景 {scene.sceneNumber} - {scene.sceneDescription}
+                          </h4>
+                        </div>
+                        {/* 关键帧预览 */}
+                        <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 mb-4">
+                          <img
+                            src={keyframe.imageUrl}
+                            alt={`场景${scene.sceneNumber}关键帧`}
+                            className="w-full h-48 object-cover"
+                          />
+                        </div>
+                      </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {/* Sora */}
-                        <div>
+                        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                           <div className="mb-2 flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">OpenAI Sora</h5>
+                            <h5 className="text-sm font-bold text-gray-900 dark:text-white">OpenAI Sora</h5>
                             <button
                               onClick={() => copyText(scene.soraPrompt, 'Sora提示词')}
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1"
                             >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
                               复制
                             </button>
                           </div>
-                          <p className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {scene.soraPrompt}
                           </p>
                         </div>
 
                         {/* Runway */}
-                        <div>
+                        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                           <div className="mb-2 flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Runway Gen-2</h5>
+                            <h5 className="text-sm font-bold text-gray-900 dark:text-white">Runway Gen-2</h5>
                             <button
                               onClick={() => copyText(scene.runwayPrompt, 'Runway提示词')}
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1"
                             >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
                               复制
                             </button>
                           </div>
-                          <p className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {scene.runwayPrompt}
                           </p>
                         </div>
 
                         {/* Pika */}
-                        <div>
+                        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                           <div className="mb-2 flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Pika</h5>
+                            <h5 className="text-sm font-bold text-gray-900 dark:text-white">Pika</h5>
                             <button
                               onClick={() => copyText(scene.pikaPrompt, 'Pika提示词')}
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1"
                             >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
                               复制
                             </button>
                           </div>
-                          <p className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {scene.pikaPrompt}
                           </p>
                         </div>
 
                         {/* Kling */}
-                        <div>
+                        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                           <div className="mb-2 flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Kling（可灵）</h5>
+                            <h5 className="text-sm font-bold text-gray-900 dark:text-white">Kling（可灵）</h5>
                             <button
                               onClick={() => copyText(scene.klingPrompt, 'Kling提示词')}
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1"
                             >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
                               复制
                             </button>
                           </div>
-                          <p className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {scene.klingPrompt}
                           </p>
                         </div>
 
                         {/* 中文通用 */}
-                        <div>
+                        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                           <div className="mb-2 flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">中文通用提示词</h5>
+                            <h5 className="text-sm font-bold text-gray-900 dark:text-white">中文通用提示词</h5>
                             <button
                               onClick={() => copyText(scene.chinesePrompt, '中文提示词')}
-                              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1"
                             >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
                               复制
                             </button>
                           </div>
-                          <p className="rounded bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {scene.chinesePrompt}
                           </p>
                         </div>
 
                         {/* 其他信息 */}
-                        <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                        <div className="grid grid-cols-2 gap-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
                           <div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">摄像机运动：</span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">{scene.cameraMovement}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block">摄像机运动</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{scene.cameraMovement}</span>
                           </div>
                           <div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">建议时长：</span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">{scene.duration}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block">建议时长</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{scene.duration}</span>
                           </div>
                           <div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">运动强度：</span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">{scene.motionIntensity}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block">运动强度</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{scene.motionIntensity}</span>
                           </div>
                           <div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">音乐情绪：</span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">{scene.musicMood}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block">音乐情绪</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{scene.musicMood}</span>
                           </div>
                           <div className="col-span-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">音效建议：</span>
-                            <span className="text-xs text-gray-700 dark:text-gray-300">{scene.audioSuggestion}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block">音效建议</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{scene.audioSuggestion}</span>
                           </div>
                         </div>
                       </div>
@@ -820,11 +1043,14 @@ export default function Home() {
               </div>
             )}
 
-            <div className="mt-6 flex gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
               <button
                 onClick={() => setCurrentStep('keyframes')}
-                className="rounded-lg border border-gray-300 px-6 py-2 font-medium text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center gap-2"
               >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
                 返回关键帧
               </button>
               <button
@@ -832,9 +1058,12 @@ export default function Home() {
                   downloadAll();
                   setCurrentStep('download');
                 }}
-                className="rounded-lg bg-gradient-to-r from-green-500 to-blue-500 px-6 py-2 font-medium text-white transition-all hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                className="rounded-xl bg-gradient-to-r from-green-500 to-blue-500 px-8 py-3 font-semibold text-white transition-all hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-4 focus:ring-green-500/30 shadow-lg shadow-green-500/30 flex items-center gap-2"
               >
-                下载并完成
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                下载所有素材并完成
               </button>
             </div>
           </div>
@@ -842,25 +1071,32 @@ export default function Home() {
 
         {/* 步骤7：完成 */}
         {currentStep === 'download' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <div className="rounded-2xl border border-gray-200 bg-white p-12 shadow-lg dark:border-gray-700 dark:bg-gray-800 text-center max-w-3xl mx-auto">
+            <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-blue-500 shadow-xl shadow-green-500/30">
+              <svg className="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
               完成！
             </h2>
-            <p className="mb-6 text-gray-600 dark:text-gray-400">
-              所有关键帧已生成并下载完成。所有图片高度一致（720×1280），人物保持连贯性。<br />
-              视频生成提示词已准备就绪，可用于 Sora、Runway、Pika、Kling 等 AI 视频工具。
+            <p className="mb-8 text-gray-600 dark:text-gray-400 leading-relaxed">
+              所有关键帧和视频提示词已打包下载完成。<br />
+              <span className="font-medium text-gray-900 dark:text-white">关键帧</span>：720×1280 统一尺寸，使用 image-to-image 技术保持人物一致性<br />
+              <span className="font-medium text-gray-900 dark:text-white">提示词</span>：已针对 Sora、Runway、Pika、Kling 等工具优化<br />
+              <span className="font-medium text-gray-900 dark:text-white">文件命名</span>：场景编号统一，方便对应
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-600"
-            >
-              创建新剧本
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                创建新剧本
+              </button>
+            </div>
           </div>
         )}
       </main>
