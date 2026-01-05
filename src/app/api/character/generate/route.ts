@@ -4,6 +4,7 @@ import { LLMClient, Config, ImageGenerationClient } from 'coze-coding-dev-sdk';
 interface CharacterRequest {
   script: any; // MovieScript
   artStyle: string;
+  artStyleStrength?: number; // 0-100, 画风强度
 }
 
 interface CharacterInfo {
@@ -34,7 +35,7 @@ interface CharacterDesign {
 export async function POST(request: NextRequest) {
   try {
     const body: CharacterRequest = await request.json();
-    const { script, artStyle } = body;
+    const { script, artStyle, artStyleStrength = 80 } = body;
 
     if (!script || !script.scenes) {
       return NextResponse.json(
@@ -56,10 +57,28 @@ export async function POST(request: NextRequest) {
       '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
       '油画风格': 'oil painting, textured, classic art, oil brushstrokes, rich colors',
       '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
+      '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing',
+      '吉卜力风格': 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical',
+      '水墨风格': 'ink painting, traditional chinese art, brush strokes, minimalist, black ink',
+      '赛璐璐风格': 'cel shaded, anime, bold outlines, flat colors, graphic novel style',
+      '蒸汽朋克': 'steampunk, victorian, brass gears, steam, industrial, ornate',
+      '暗黑哥特': 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting',
+      '浮世绘风格': 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns',
+      '低多边形': 'low poly, geometric, flat shading, minimalist, 3D render',
+      '黏土动画': 'claymation, clay animation, stop motion, textured, hand crafted',
+      '复古油画': 'vintage painting, classical art, renaissance, rich textures, aged',
+      '霓虹艺术': 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors',
     };
 
     // 获取当前画风的关键词
-    const currentArtStyleKeywords = artStyleKeywordsMap[artStyle] || artStyleKeywordsMap['写实风格'];
+    const baseKeywords = artStyleKeywordsMap[artStyle] || artStyleKeywordsMap['写实风格'];
+    
+    // 根据画风强度调整关键词权重
+    // artStyleStrength: 0-100, 0=写实平衡, 100=风格强烈
+    const strengthWeight = artStyleStrength / 100;
+    const currentArtStyleKeywords = strengthWeight >= 0.5 
+      ? baseKeywords 
+      : `photorealistic, ${baseKeywords}`; // 强度较低时增加写实关键词平衡
 
     // 步骤1：提取所有人物
     const allCharacters = Array.from(new Set(

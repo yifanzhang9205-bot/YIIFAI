@@ -127,13 +127,27 @@ export default function Home() {
   const [selectedPromptScene, setSelectedPromptScene] = useState<number | null>(null);
 
   const artStyles = [
-    '写实风格',
-    '卡通风格',
-    '动漫风格',
-    '水彩风格',
-    '油画风格',
-    '像素风格',
+    { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewColor: 'from-gray-700 to-gray-900' },
+    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewColor: 'from-pink-400 to-purple-500' },
+    { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', previewColor: 'from-blue-400 to-cyan-400' },
+    { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', previewColor: 'from-gray-600 to-gray-800' },
+    { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', previewColor: 'from-amber-200 to-orange-300' },
+    { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', previewColor: 'from-yellow-500 to-orange-600' },
+    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewColor: 'from-green-400 to-emerald-500' },
+    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewColor: 'from-fuchsia-500 to-cyan-500' },
+    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewColor: 'from-green-300 to-teal-400' },
+    { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', previewColor: 'from-slate-600 to-slate-800' },
+    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewColor: 'from-indigo-500 to-purple-600' },
+    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewColor: 'from-amber-600 to-yellow-700' },
+    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewColor: 'from-gray-800 to-purple-900' },
+    { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', previewColor: 'from-red-400 to-pink-500' },
+    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewColor: 'from-cyan-400 to-blue-500' },
+    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewColor: 'from-orange-400 to-red-400' },
+    { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', previewColor: 'from-yellow-600 to-amber-700' },
+    { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', previewColor: 'from-pink-500 to-violet-600' },
   ];
+
+  const [artStyleStrength, setArtStyleStrength] = useState(80); // 0-100, 默认80%
 
   // 更新加载状态
   const updateLoading = (loading: boolean, text?: string, progress?: { current: number; total: number }) => {
@@ -222,6 +236,7 @@ export default function Home() {
         body: JSON.stringify({
           script,
           artStyle: selectedStyle,
+          artStyleStrength,
         }),
       });
 
@@ -252,7 +267,8 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           script,
-          artStyle: storyboard.artStyle,
+          artStyle: selectedStyle,
+          artStyleStrength,
         }),
       });
 
@@ -266,6 +282,45 @@ export default function Home() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成人物设定失败');
+    } finally {
+      updateLoading(false);
+    }
+  };
+
+  // 重新生成单个角色
+  const regenerateCharacter = async (characterIndex: number) => {
+    if (!characterDesign) return;
+
+    const character = characterDesign.characters[characterIndex];
+    updateLoading(true, `正在重新生成${character.name}...`);
+
+    try {
+      const response = await fetch('/api/character/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          character: character,
+          artStyle: selectedStyle,
+          artStyleStrength,
+          unifiedSetting: characterDesign.unifiedSetting,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // 更新角色图片
+        const newCharacterImages = [...characterDesign.characterImages];
+        newCharacterImages[characterIndex] = data.imageUrl;
+        setCharacterDesign({
+          ...characterDesign,
+          characterImages: newCharacterImages,
+        });
+      } else {
+        throw new Error(data.error || '重新生成失败');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '重新生成失败');
     } finally {
       updateLoading(false);
     }
@@ -300,6 +355,44 @@ export default function Home() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成关键帧失败');
+    } finally {
+      updateLoading(false);
+    }
+  };
+
+  // 重新生成单个关键帧
+  const regenerateKeyframe = async (sceneNumber: number) => {
+    if (!keyframes || !storyboard || !characterDesign) return;
+
+    const keyframe = keyframes.find(kf => kf.sceneNumber === sceneNumber);
+    if (!keyframe) return;
+
+    updateLoading(true, `正在重新生成场景${sceneNumber}...`);
+
+    try {
+      const response = await fetch('/api/keyframes/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scene: keyframe,
+          storyboard,
+          characterImages: characterDesign.characterImages,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // 更新关键帧图片
+        const newKeyframes = keyframes.map(kf => 
+          kf.sceneNumber === sceneNumber ? { ...kf, imageUrl: data.imageUrl } : kf
+        );
+        setKeyframes(newKeyframes);
+      } else {
+        throw new Error(data.error || '重新生成失败');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '重新生成失败');
     } finally {
       updateLoading(false);
     }
@@ -637,22 +730,66 @@ export default function Home() {
             <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
               第三步：选择画风并生成分镜
             </h2>
+            
+            {/* 画风强度调节 */}
+            <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="flex items-center justify-between mb-3">
+                <label className="font-medium text-gray-700 dark:text-gray-300">
+                  画风强度调节
+                </label>
+                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                  {artStyleStrength}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={artStyleStrength}
+                onChange={(e) => setArtStyleStrength(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500"
+              />
+              <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>写实平衡</span>
+                <span>风格强烈</span>
+              </div>
+            </div>
+
+            {/* 画风选择 */}
             <div className="mb-8">
               <label className="mb-4 block font-medium text-gray-700 dark:text-gray-300">
-                选择画风
+                选择画风（点击预览效果）
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {artStyles.map((style) => (
                   <button
-                    key={style}
-                    onClick={() => setSelectedStyle(style)}
-                    className={`rounded-xl border-2 px-6 py-4 font-medium transition-all ${
-                      selectedStyle === style
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 shadow-md'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                    key={style.name}
+                    onClick={() => setSelectedStyle(style.name)}
+                    className={`group relative rounded-xl border-2 overflow-hidden transition-all ${
+                      selectedStyle === style.name
+                        ? 'border-blue-500 shadow-lg shadow-blue-500/30'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
                     }`}
                   >
-                    {style}
+                    {/* 预览渐变色块 */}
+                    <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    </div>
+                    
+                    {/* 画风名称和描述 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                      <div className="font-semibold text-white text-sm">{style.name}</div>
+                      <div className="text-xs text-white/80">{style.description}</div>
+                    </div>
+                    
+                    {/* 选中标记 */}
+                    {selectedStyle === style.name && (
+                      <div className="absolute top-2 right-2 h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -733,13 +870,25 @@ export default function Home() {
             </div>
             <div className="mb-8 grid gap-6 sm:grid-cols-2">
               {characterDesign.characters.map((character, index) => (
-                <div key={character.name} className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
+                <div key={character.name} className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg group relative">
                   <div className="aspect-[720/1280] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                     <img
                       src={characterDesign.characterImages[index]}
                       alt={character.name}
                       className="h-full w-full object-cover"
                     />
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <button
+                      onClick={() => regenerateCharacter(index)}
+                      disabled={loading}
+                      className="p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 dark:bg-gray-800/90 dark:hover:bg-gray-700"
+                      title="重新生成此角色"
+                    >
+                      <svg className={`h-5 w-5 text-blue-600 dark:text-blue-400 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-gray-900 dark:text-white">{character.name}</h3>
@@ -786,6 +935,19 @@ export default function Home() {
                     alt={`场景${keyframe.sceneNumber}`}
                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
+                  
+                  {/* 重新生成按钮 */}
+                  <button
+                    onClick={() => regenerateKeyframe(keyframe.sceneNumber)}
+                    disabled={loading}
+                    className="absolute top-3 right-3 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 dark:bg-gray-800/90 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100"
+                    title="重新生成此关键帧"
+                  >
+                    <svg className={`h-5 w-5 text-blue-600 dark:text-blue-400 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-white font-bold text-sm">场景 {keyframe.sceneNumber}</span>
