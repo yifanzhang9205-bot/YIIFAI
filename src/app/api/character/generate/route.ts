@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMClient, Config, ImageGenerationClient } from 'coze-coding-dev-sdk';
-import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
 
 interface CharacterRequest {
   script: any; // MovieScript
@@ -11,6 +8,11 @@ interface CharacterRequest {
 
 interface CharacterInfo {
   name: string;
+  role: string; // 角色：主角/配角等
+  relationship: string; // 与其他人物的关系
+  ethnicity: string; // 种族/族裔
+  age: string;
+  gender: string;
   description: string;
   appearance: string;
   outfit: string;
@@ -19,6 +21,11 @@ interface CharacterInfo {
 }
 
 interface CharacterDesign {
+  unifiedSetting: {
+    ethnicity: string; // 统一种族
+    artStyleKeywords: string; // 统一画风关键词
+    familyTraits: string; // 家族共同特征
+  };
   characters: CharacterInfo[];
   characterImages: string[]; // 图片URL
 }
@@ -52,64 +59,109 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 步骤2：生成人物设定描述
-    const systemPrompt = `你是一个专业的人物设定设计师。
-你的任务是根据剧本和画风，为每个角色生成详细的人物设定。
+    // 步骤2：分析人物关系和统一设定
+    const relationshipPrompt = `你是一个专业的人物关系分析师。
+你的任务是根据剧本内容，分析人物之间的关系，并确定统一的种族/族裔设定。
 
-人物设定格式：
-- 姓名
-- 描述（年龄、性格、背景）
-- 外貌（发型、脸型、五官特征）
-- 服装（穿搭风格、颜色）
-- 表情（常用表情）
-- 生图提示词（英文，包含画风和人物特征）
+关键原则：
+1. **血缘关系必须一致**：父母和孩子必须同一种族
+2. **家族成员要有相似特征**：同一家庭的人要有种族特征相似性
+3. **避免逻辑错误**：不要出现两个外国父母生了中国孩子的情况
 
-返回格式必须是JSON：
+请返回JSON格式：
 {
+  "relationships": [
+    {"name": "角色名", "role": "角色类型（主角/配角/等）", "relationship": "与他人的关系（如：父亲、母亲、儿子、朋友等）", "age": "年龄", "gender": "性别"}
+  ],
+  "unifiedSetting": {
+    "ethnicity": "统一的种族/族裔（必须具体，如：东亚人、白人、黑人、拉丁裔等，如果有多人混血请明确说明）",
+    "artStyleKeywords": "基于画风${artStyle}的关键词（英文，如：anime style / photorealistic 等）",
+    "familyTraits": "家族成员共同的相貌特征（如：圆脸、高鼻梁、深色眼睛等）"
+  },
   "characters": [
     {
       "name": "角色名",
-      "description": "角色描述",
-      "appearance": "外貌描述",
+      "role": "角色类型",
+      "relationship": "关系描述",
+      "ethnicity": "种族",
+      "age": "年龄",
+      "gender": "性别",
+      "description": "角色背景和性格",
+      "appearance": "详细外貌描述（必须包含统一的种族特征）",
       "outfit": "服装描述",
-      "expression": "表情",
-      "prompt": "生图提示词（包含画风关键词、人物外貌、服装等）"
+      "expression": "常用表情",
+      "prompt": "英文生图提示词（必须包含：1.统一的种族关键词 2.统一的画风关键词 3.家族共同特征 4.个人独特特征）"
     }
   ]
 }
 
-画风参考：${artStyle}`;
-
-    const userPrompt = `剧本标题：${script.title}
+剧本信息：
+标题：${script.title}
 类型：${script.genre}
+人物列表：${allCharacters.join(', ')}
 
-人物列表：
-${allCharacters.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+请仔细分析人物关系，确保种族和血缘关系的一致性。`;
 
-请为每个人物生成设定，返回JSON格式。`;
-
-    const messages = [
-      { role: 'system' as const, content: systemPrompt },
-      { role: 'user' as const, content: userPrompt },
+    const relationshipMessages = [
+      { role: 'system' as const, content: '你是专业的人物关系分析师，确保逻辑一致性。' },
+      { role: 'user' as const, content: relationshipPrompt },
     ];
 
-    const response = await llmClient.invoke(messages, { temperature: 0.7 });
+    const relationshipResponse = await llmClient.invoke(relationshipMessages, { temperature: 0.5 });
 
-    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+    const jsonMatch = relationshipResponse.content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('无法解析人物设定');
+      throw new Error('无法解析人物关系设定');
     }
 
-    const characterInfo: { characters: CharacterInfo[] } = JSON.parse(jsonMatch[0]);
+    const characterData: any = JSON.parse(jsonMatch[0]);
 
-    // 步骤3：为每个人物生成设定图（统一高度 720x1280）
+    // 步骤3：校验一致性（自检逻辑）
+    const unifiedEthnicity = characterData.unifiedSetting.ethnicity;
+    const characters = characterData.characters;
+
+    // 检查是否有多个种族
+    const ethnicities = new Set(characters.map((c: CharacterInfo) => c.ethnicity));
+    if (ethnicities.size > 1) {
+      console.warn('检测到多种族角色，统一为：', unifiedEthnicity);
+      // 强制统一种族
+      characters.forEach((c: CharacterInfo) => {
+        c.ethnicity = unifiedEthnicity;
+        // 更新 prompt 中的种族关键词
+        const ethnicityKeywords: Record<string, string> = {
+          '东亚人': 'East Asian',
+          '白人': 'Caucasian',
+          '黑人': 'African',
+          '拉丁裔': 'Latino',
+          '南亚人': 'South Asian',
+        };
+        const ethnicityKey = ethnicityKeywords[unifiedEthnicity] || 'mixed race';
+        c.prompt = c.prompt.replace(/\b(East Asian|Caucasian|African|Latino|South Asian|mixed race)\b/gi, ethnicityKey);
+      });
+    }
+
+    // 步骤4：为每个人物生成设定图（统一高度 720x1280）
     const characterImages: string[] = [];
 
-    for (const character of characterInfo.characters) {
-      console.log(`生成人物设定图：${character.name}`);
+    for (const character of characters) {
+      console.log(`生成人物设定图：${character.name}（种族：${character.ethnicity}）`);
+
+      // 优化 prompt，确保包含统一种族和画风
+      const ethnicityMap: Record<string, string> = {
+        '东亚人': 'East Asian',
+        '白人': 'Caucasian',
+        '黑人': 'African',
+        '拉丁裔': 'Latino',
+        '南亚人': 'South Asian',
+      };
+
+      const ethnicityKeyword: string = ethnicityMap[unifiedEthnicity] || 'mixed race';
+
+      // 确保包含所有一致性要素
+      const unifiedPrompt = `${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.artStyleKeywords}, ${characterData.unifiedSetting.familyTraits}`;
 
       const imageResponse = await imageClient.generate({
-        prompt: character.prompt,
+        prompt: unifiedPrompt,
         size: '720x1280',
         watermark: false,
       });
@@ -124,7 +176,8 @@ ${allCharacters.map((c, i) => `${i + 1}. ${c}`).join('\n')}
     }
 
     const design: CharacterDesign = {
-      characters: characterInfo.characters,
+      unifiedSetting: characterData.unifiedSetting,
+      characters,
       characterImages,
     };
 
