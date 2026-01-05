@@ -5,6 +5,7 @@ interface CharacterRequest {
   script: any; // MovieScript
   artStyle: string;
   artStyleStrength?: number; // 0-100, 画风强度
+  fastMode?: boolean; // 快速预览模式（低分辨率）
 }
 
 interface CharacterInfo {
@@ -35,7 +36,7 @@ interface CharacterDesign {
 export async function POST(request: NextRequest) {
   try {
     const body: CharacterRequest = await request.json();
-    const { script, artStyle, artStyleStrength = 80 } = body;
+    const { script, artStyle, artStyleStrength = 80, fastMode = false } = body;
 
     if (!script || !script.scenes) {
       return NextResponse.json(
@@ -222,13 +223,15 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 步骤4：为每个人物生成设定图（统一高度 720x1280）
-    const characterImages: string[] = [];
+    // 步骤4：为每个人物生成设定图（优化：并发生成）
+    console.log(`开始并发生成 ${characters.length} 个人物设定图...`);
 
-    for (const character of characters) {
-      console.log(`生成人物设定图：${character.name}（种族：${character.ethnicity}，性别：${character.gender}）`);
+    // 根据模式选择分辨率
+    const imageSize = fastMode ? '512x912' : '720x1280';
+    console.log(`图片尺寸: ${imageSize} (${fastMode ? '快速预览模式' : '标准模式'})`);
 
-      // 优化 prompt，确保包含统一种族和画风
+    // 构建所有人物的prompt
+    const characterPrompts = characters.map((character: CharacterInfo) => {
       const ethnicityMap: Record<string, string> = {
         '东亚人': 'East Asian',
         '白人': 'Caucasian',
@@ -247,17 +250,23 @@ export async function POST(request: NextRequest) {
       } else if (gender.includes('女') || gender.includes('female') || gender.includes('woman')) {
         genderKeyword = 'woman, female';
       } else {
-        // 如果性别不明确，默认为男性（或可以报错）
         console.warn(`角色${character.name}性别不明确：${character.gender}，默认使用男性`);
         genderKeyword = 'man, male';
       }
 
-      // 确保包含所有一致性要素，性别和画风关键词放在最前面
+      // 确保包含所有一致性要素
       const unifiedPrompt = `${genderKeyword}, ${currentArtStyleKeywords}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}`;
 
+      return { character, prompt: unifiedPrompt };
+    });
+
+    // 并发生成所有人物图片
+    const imagePromises = characterPromises.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
+      console.log(`生成人物设定图：${character.name}...`);
+
       const imageResponse = await imageClient.generate({
-        prompt: unifiedPrompt,
-        size: '720x1280',
+        prompt,
+        size: imageSize,
         watermark: false,
       });
 
@@ -267,8 +276,19 @@ export async function POST(request: NextRequest) {
         throw new Error(`生成人物${character.name}设定图失败`);
       }
 
-      characterImages.push(helper.imageUrls[0]);
-    }
+      console.log(`✓ 完成：${character.name}`);
+      return { index: characters.indexOf(character), imageUrl: helper.imageUrls[0] };
+    });
+
+    // 等待所有图片生成完成
+    const imageResults = await Promise.all(imagePromises);
+
+    // 按原始顺序整理图片URL
+    const characterImages: string[] = [];
+    imageResults.sort((a: any, b: any) => a.index - b.index);
+    imageResults.forEach((result: any) => characterImages.push(result.imageUrl));
+
+    console.log(`✓ 所有人物设定图生成完成`);
 
     const design: CharacterDesign = {
       unifiedSetting: characterData.unifiedSetting,
