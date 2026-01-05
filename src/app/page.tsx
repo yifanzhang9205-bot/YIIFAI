@@ -240,36 +240,6 @@ export default function Home() {
     }
   };
 
-  // 重新生成分镜
-  const regenerateStoryboard = async () => {
-    if (!script) return;
-
-    updateLoading(true, '正在重新生成分镜脚本...');
-
-    try {
-      const response = await fetch('/api/storyboard/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          script,
-          artStyle: selectedStyle,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setStoryboard(data.storyboard);
-      } else {
-        throw new Error(data.error || '生成分镜失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成分镜失败');
-    } finally {
-      updateLoading(false);
-    }
-  };
-
   // 生成人物设定
   const generateCharacters = async () => {
     if (!script || !storyboard) return;
@@ -335,36 +305,6 @@ export default function Home() {
     }
   };
 
-  // 重新生成人物设定
-  const regenerateCharacters = async () => {
-    if (!script || !storyboard) return;
-
-    updateLoading(true, '正在重新生成人物设定...');
-
-    try {
-      const response = await fetch('/api/character/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          script,
-          artStyle: storyboard.artStyle,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setCharacterDesign(data.design);
-      } else {
-        throw new Error(data.error || '生成人物设定失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成人物设定失败');
-    } finally {
-      updateLoading(false);
-    }
-  };
-
   // 生成视频提示词
   const generateVideoPrompts = async () => {
     if (!script || !storyboard || !characterDesign || !keyframes) return;
@@ -388,73 +328,6 @@ export default function Home() {
       if (data.success) {
         setVideoPrompts(data.videoPrompts);
         setCurrentStep('video-prompts');
-      } else {
-        throw new Error(data.error || '生成视频提示词失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成视频提示词失败');
-    } finally {
-      updateLoading(false);
-    }
-  };
-
-  // 重新生成关键帧
-  const regenerateKeyframes = async () => {
-    if (!storyboard || !characterDesign) return;
-
-    updateLoading(true, '正在重新生成关键帧（可能需要几分钟）...', {
-      current: 0,
-      total: storyboard.scenes.length
-    });
-
-    try {
-      const response = await fetch('/api/keyframes/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          storyboard,
-          characterImages: characterDesign.characterImages,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setKeyframes(data.keyframes);
-        // 清除视频提示词，因为关键帧变了
-        setVideoPrompts(null);
-      } else {
-        throw new Error(data.error || '生成关键帧失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成关键帧失败');
-    } finally {
-      updateLoading(false);
-    }
-  };
-
-  // 重新生成视频提示词
-  const regenerateVideoPrompts = async () => {
-    if (!script || !storyboard || !characterDesign || !keyframes) return;
-
-    updateLoading(true, '正在重新生成视频提示词...');
-
-    try {
-      const response = await fetch('/api/video-prompt/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          script,
-          storyboard,
-          characterImages: characterDesign.characterImages,
-          keyframes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setVideoPrompts(data.videoPrompts);
       } else {
         throw new Error(data.error || '生成视频提示词失败');
       }
@@ -611,7 +484,6 @@ export default function Home() {
             </div>
           )}
         </div>
-        </div>
       </header>
 
       {/* 主内容 */}
@@ -735,38 +607,26 @@ export default function Home() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <button
-                onClick={() => setCurrentStep('requirement')}
+                onClick={editScript}
                 disabled={loading}
-                className="rounded-xl border-2 border-gray-200 px-6 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                返回需求
+                {loading ? '修改中...' : '修改剧本'}
               </button>
-              <div className="flex gap-4">
-                <button
-                  onClick={editScript}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-blue-500 px-6 py-4 font-semibold text-blue-700 transition-all hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-50"
-                >
-                  {loading ? '修改中...' : '修改剧本'}
-                </button>
-                <button
-                  onClick={confirmScript}
-                  disabled={loading}
-                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
-                >
-                  {loading ? '生成中...' : (
-                    <>
-                      确认，选择画风
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                onClick={confirmScript}
+                disabled={loading}
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+              >
+                {loading ? '生成中...' : (
+                  <>
+                    确认，选择画风
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -830,26 +690,7 @@ export default function Home() {
                 </div>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setCurrentStep('script')}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-gray-200 px-6 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回剧本
-                </button>
-                <button
-                  onClick={regenerateStoryboard}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-blue-500 px-6 py-4 font-semibold text-blue-700 transition-all hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-50"
-                >
-                  {loading ? '生成中...' : '重新生成分镜'}
-                </button>
-              </div>
+            <div className="flex justify-end">
               <button
                 onClick={generateCharacters}
                 disabled={loading}
@@ -907,26 +748,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setCurrentStep('storyboard')}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-gray-200 px-6 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回分镜
-                </button>
-                <button
-                  onClick={regenerateCharacters}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-blue-500 px-6 py-4 font-semibold text-blue-700 transition-all hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-50"
-                >
-                  {loading ? '生成中...' : '重新生成人物'}
-                </button>
-              </div>
+            <div className="flex justify-end">
               <button
                 onClick={confirmCharacters}
                 disabled={loading}
@@ -985,44 +807,24 @@ export default function Home() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 共 {keyframes.length} 个关键帧，使用 image-to-image 技术保持人物一致性
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 items-center">
-                <div className="flex gap-4 order-2 sm:order-1">
-                  <button
-                    onClick={() => setCurrentStep('character')}
-                    disabled={loading}
-                    className="rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    返回人物
-                  </button>
-                  <button
-                    onClick={regenerateKeyframes}
-                    disabled={loading}
-                    className="rounded-xl border-2 border-blue-500 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-50"
-                  >
-                    {loading ? '生成中...' : '重新生成关键帧'}
-                  </button>
-                </div>
-                <div className="flex gap-4 order-1 sm:order-2 w-full sm:w-auto justify-between">
-                  <button
-                    onClick={downloadAll}
-                    className="rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 flex items-center gap-2"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    打包下载关键帧
-                  </button>
-                  <button
-                    onClick={generateVideoPrompts}
-                    disabled={loading}
-                    className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
-                  >
-                    {loading ? '生成中...' : (
-                      <>
-                        生成视频提示词
+              <div className="flex gap-4">
+                <button
+                  onClick={downloadAll}
+                  className="rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 flex items-center gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  打包下载关键帧
+                </button>
+                <button
+                  onClick={generateVideoPrompts}
+                  disabled={loading}
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+                >
+                  {loading ? '生成中...' : (
+                    <>
+                      生成视频提示词
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
@@ -1242,24 +1044,15 @@ export default function Home() {
             )}
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setCurrentStep('keyframes')}
-                  className="rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回关键帧
-                </button>
-                <button
-                  onClick={regenerateVideoPrompts}
-                  disabled={loading}
-                  className="rounded-xl border-2 border-blue-500 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-50"
-                >
-                  {loading ? '生成中...' : '重新生成提示词'}
-                </button>
-              </div>
+              <button
+                onClick={() => setCurrentStep('keyframes')}
+                className="rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center gap-2"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                返回关键帧
+              </button>
               <button
                 onClick={() => {
                   downloadAll();
