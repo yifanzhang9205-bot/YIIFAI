@@ -154,7 +154,10 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: relationshipPrompt },
     ];
 
-    const relationshipResponse = await llmClient.invoke(relationshipMessages, { temperature: 0.5 });
+    const relationshipResponse = await llmClient.invoke(relationshipMessages, {
+      model: 'doubao-seed-1-6-flash-250615', // 使用快速模型
+      temperature: 0.5
+    });
 
     const jsonMatch = relationshipResponse.content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

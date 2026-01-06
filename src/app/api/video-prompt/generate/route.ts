@@ -138,7 +138,10 @@ ${scenesInfo}
       { role: 'user' as const, content: userPrompt },
     ];
 
-    const response = await client.invoke(messages, { temperature: 0.7 });
+    const response = await client.invoke(messages, {
+      model: 'doubao-seed-1-6-flash-250615', // 使用快速模型
+      temperature: 0.7
+    });
 
     // 提取JSON
     const jsonMatch = response.content.match(/\{[\s\S]*\}/);
