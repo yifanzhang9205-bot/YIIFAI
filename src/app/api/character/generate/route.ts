@@ -302,7 +302,7 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
       }
     });
 
-    // 检查prompt是否包含画风关键词
+    // 检查prompt是否包含画风关键词（使用三明治结构强化）
     characters.forEach((c: CharacterInfo) => {
       const promptLower = c.prompt.toLowerCase();
 
@@ -312,9 +312,19 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
       );
 
       if (!hasArtStyle) {
-        console.warn(`角色${c.name}的prompt缺少画风关键词，强制添加`);
-        // 强制在开头添加画风关键词
-        c.prompt = `${currentArtStyleKeywords}, ${c.prompt}`;
+        console.warn(`角色${c.name}的prompt缺少画风关键词，强制添加三明治结构`);
+        // 强制在开头添加画风关键词（三明治结构）
+        const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. `;
+        const forcedArtStyleSuffix = ` Ensure the final image adheres strictly to the ${artStyle} art style.`;
+
+        c.prompt = forcedArtStylePrefix + c.prompt + forcedArtStyleSuffix;
+      } else {
+        // 即使已有画风关键词，也添加强制性的前后缀
+        const reinforceArtStyle = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. `;
+        const reinforceArtStyleSuffix = ` Art style must be consistent: ${artStyle}.`;
+
+        c.prompt = reinforceArtStyle + c.prompt + reinforceArtStyleSuffix;
+        console.log(`角色${c.name}的prompt已强化画风一致性`);
       }
     });
 
@@ -349,8 +359,11 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
         genderKeyword = 'man, male';
       }
 
-      // 确保包含所有一致性要素
-      const unifiedPrompt = `${genderKeyword}, ${currentArtStyleKeywords}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}`;
+      // 确保包含所有一致性要素（使用三明治结构强化画风）
+      const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. STRICT: Must follow this art style 100%. `;
+      const forcedArtStyleSuffix = ` Art style: ${artStyle}. Final image must adhere to ${artStyle} aesthetic.`;
+
+      const unifiedPrompt = forcedArtStylePrefix + `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}` + forcedArtStyleSuffix;
 
       return { character, prompt: unifiedPrompt };
     });
