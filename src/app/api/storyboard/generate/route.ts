@@ -236,59 +236,70 @@ export async function POST(request: NextRequest) {
      - **位置细节**：描述人物在场景中的具体位置和构图关系（"占据画面左侧三分之一处" vs "在画面中央"）
    - **多个人物时**：明确每个人的位置和状态差异（如"左边人物激动地指向右边，右边人物惊讶地后退"）
    - **动态状态**：如果是动作场景，描述动态细节（如"手臂正在挥动的模糊残影"）
-   - **道具互动**：如果人物有道具，描述如何使用（如"手指悬在键盘上方，屏幕的光映在脸上"）;
+   - **道具互动**：如果人物有道具，描述如何使用（如"手指悬在键盘上方，屏幕的光映在脸上"）
+`;
 
     // 增强剧本分析，包含情感和戏剧信息
-    const scriptAnalysis = `【剧本分析】
-标题：《${script.title}》
-类型：${script.genre}
-核心冲突：${script.logline}
-情感弧线：${script.emotionalArc}
-视觉风格：${script.visualStyle}
-整体基调：${script.summary}
+    let scriptAnalysisParts = ['[剧本分析]'];
+    scriptAnalysisParts.push('标题：《' + script.title + '》');
+    scriptAnalysisParts.push('类型：' + script.genre);
+    scriptAnalysisParts.push('核心冲突：' + script.logline);
+    scriptAnalysisParts.push('情感弧线：' + script.emotionalArc);
+    scriptAnalysisParts.push('视觉风格：' + script.visualStyle);
+    scriptAnalysisParts.push('整体基调：' + script.summary);
+    scriptAnalysisParts.push('');
+    scriptAnalysisParts.push('[场次信息]');
 
-【场次信息】
-${script.scenes.map((s: any, i: number) =>
-`场景${i + 1}：
-- 地点：${s.location}
-- 时间：${s.timeOfDay}
-- 人物：${s.characters.join('、')}
-- 动作描述：${s.action}
-- 对话内容：${s.dialogue || '无'}
-- 情绪基调：${s.mood}
-- 情感钩子：${s.visualHook || '视觉冲击点'}
-- 戏剧重点：${s.emotionalBeat || '情感节拍'}
-- 持续时间：${s.duration}
-- 人物状态推导：
-  ${s.characters.map((char: string, idx: number) =>
-    `  人物"${char}"：
-   - 可能的动作：基于"${s.action}"推断人物的肢体动作
-   - 可能的表情：基于"${s.mood}"和"${s.dialogue || ''}"推断面部表情
-   - 可能的姿态：基于情感状态推断身体姿态和肢体语言
-   - 位置安排：根据构图需求建议人物在画面中的位置
-  `).join('')}`
-).join('\n\n')}`
+    const sceneParts = script.scenes.map((s: any, i: number) => {
+      const sceneInfo = [
+        '场景' + (i + 1) + '：',
+        '- 地点：' + s.location,
+        '- 时间：' + s.timeOfDay,
+        '- 人物：' + s.characters.join('、'),
+        '- 动作描述：' + s.action,
+        '- 对话内容：' + (s.dialogue || '无'),
+        '- 情绪基调：' + s.mood,
+        '- 情感钩子：' + (s.visualHook || '视觉冲击点'),
+        '- 戏剧重点：' + (s.emotionalBeat || '情感节拍'),
+        '- 持续时间：' + s.duration,
+        '- 人物状态推导：',
+        ...s.characters.map((char: string) => {
+          return [
+            '  人物"' + char + '"：',
+            '   - 可能的动作：基于"' + s.action + '"推断人物的肢体动作',
+            '   - 可能的表情：基于"' + s.mood + '"和"' + (s.dialogue || '') + '"推断面部表情',
+            '   - 可能的姿态：基于情感状态推断身体姿态和肢体语言',
+            '   - 位置安排：根据构图需求建议人物在画面中的位置',
+          ].join('\n');
+        })
+      ];
+      return sceneInfo.join('\n');
+    });
 
-【导演创作指南】
-1. 分析每个场景的戏剧目标：这个场景要达成什么？让观众感受到什么？
-2. 考虑情感弧线：开场建立氛围，中段推进冲突，高潮释放情绪，结局留下余韵
-3. 角色状态变化：通过镜头语言展现角色在故事中的成长和转变
-4. 视觉节奏：在紧张与舒缓之间找到平衡，避免观众疲劳
-5. **人物状态推导（关键）**：
-   - 从动作描述推断具体肢体语言（如"拿起电话"→"手指颤抖着拿起电话，屏幕的光照亮脸部"）
-   - 从对话内容推断表情和眼神（如"我绝对不会原谅你"→"紧咬嘴唇，眼神冰冷，眉头紧锁"）
-   - 从情绪基调推断整体姿态（如"愤怒"→"身体前倾，双手握拳，肩膀紧绷" vs "悲伤"→"肩膀下垂，眼睑低垂，身体微蜷"）
-   - 从人物数量决定构图关系（单人/双人/多人，不同站位和互动）
-6. **Prompt生成规范**：
-   - 每个出场人物必须有一句完整的描述（动作+表情+姿态+位置）
-   - 使用具体的视觉动词，避免笼统描述
-   - 多人物时用"on the left/right/center"明确位置
-   - 描述人物之间的互动关系（对视、接触、距离等）
+    scriptAnalysisParts.push(...sceneParts);
+    scriptAnalysisParts.push('');
+    scriptAnalysisParts.push('[导演创作指南]');
+    scriptAnalysisParts.push('1. 分析每个场景的戏剧目标：这个场景要达成什么？让观众感受到什么？');
+    scriptAnalysisParts.push('2. 考虑情感弧线：开场建立氛围，中段推进冲突，高潮释放情绪，结局留下余韵');
+    scriptAnalysisParts.push('3. 角色状态变化：通过镜头语言展现角色在故事中的成长和转变');
+    scriptAnalysisParts.push('4. 视觉节奏：在紧张与舒缓之间找到平衡，避免观众疲劳');
+    scriptAnalysisParts.push('5. 人物状态推导（关键）：');
+    scriptAnalysisParts.push('   - 从动作描述推断具体肢体语言（如"拿起电话"→"手指颤抖着拿起电话，屏幕的光照亮脸部"）');
+    scriptAnalysisParts.push('   - 从对话内容推断表情和眼神（如"我绝对不会原谅你"→"紧咬嘴唇，眼神冰冷，眉头紧锁"）');
+    scriptAnalysisParts.push('   - 从情绪基调推断整体姿态（如"愤怒"→"身体前倾，双手握拳，肩膀紧绷" vs "悲伤"→"肩膀下垂，眼睑低垂，身体微蜷"）');
+    scriptAnalysisParts.push('   - 从人物数量决定构图关系（单人/双人/多人，不同站位和互动）');
+    scriptAnalysisParts.push('6. Prompt生成规范：');
+    scriptAnalysisParts.push('   - 每个出场人物必须有一句完整的描述（动作+表情+姿态+位置）');
+    scriptAnalysisParts.push('   - 使用具体的视觉动词，避免笼统描述');
+    scriptAnalysisParts.push('   - 多人物时用"on the left/right/center"明确位置');
+    scriptAnalysisParts.push('   - 描述人物之间的互动关系（对视、接触、距离等）');
+    scriptAnalysisParts.push('');
+    scriptAnalysisParts.push('[画风]');
+    scriptAnalysisParts.push(artStyle + ' - 关键词：' + currentArtStyleKeywords);
+    scriptAnalysisParts.push('');
+    scriptAnalysisParts.push('请以导演思维创作分镜JSON，每个镜头都要有明确的情感目的和叙事功能。');
 
-【画风】
-${artStyle} - 关键词：${currentArtStyleKeywords}
-
-请以导演思维创作分镜JSON，每个镜头都要有明确的情感目的和叙事功能。`;
+    const scriptAnalysis = scriptAnalysisParts.join('\n');
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
