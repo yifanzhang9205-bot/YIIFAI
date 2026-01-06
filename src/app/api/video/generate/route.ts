@@ -55,10 +55,17 @@ async function generateVideoScript(theme: string, duration: number, style?: stri
 
   const response = await client.invoke(messages, { temperature: 0.7 });
 
+  // 提取JSON - 移除markdown标记
+  let jsonContent = response.content.trim();
+
+  // 移除可能的markdown代码块标记
+  jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
   // 尝试提取JSON
-  const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+  const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('无法解析生成的脚本');
+    console.error('LLM返回内容:', response.content);
+    throw new Error('无法解析生成的脚本，返回格式不正确');
   }
 
   const script: VideoScript = JSON.parse(jsonMatch[0]);

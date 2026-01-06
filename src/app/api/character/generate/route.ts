@@ -159,9 +159,17 @@ export async function POST(request: NextRequest) {
       temperature: 0.5
     });
 
-    const jsonMatch = relationshipResponse.content.match(/\{[\s\S]*\}/);
+    // 提取JSON - 移除markdown标记
+    let jsonContent = relationshipResponse.content.trim();
+
+    // 移除可能的markdown代码块标记
+    jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+    // 提取JSON（支持嵌套）
+    const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('无法解析人物关系设定');
+      console.error('LLM返回内容:', relationshipResponse.content);
+      throw new Error('无法解析人物关系设定，返回格式不正确');
     }
 
     const characterData: any = JSON.parse(jsonMatch[0]);

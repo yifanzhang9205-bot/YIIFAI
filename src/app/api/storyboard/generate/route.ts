@@ -198,10 +198,17 @@ ${scriptInfo}
       temperature: 0.3
     });
 
-    // 提取JSON
-    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+    // 提取JSON - 移除markdown标记
+    let jsonContent = response.content.trim();
+
+    // 移除可能的markdown代码块标记
+    jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+    // 提取JSON（支持嵌套）
+    const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('无法解析生成的分镜脚本');
+      console.error('LLM返回内容:', response.content);
+      throw new Error('无法解析生成的分镜脚本，返回格式不正确');
     }
 
     const storyboard: StoryboardScript = JSON.parse(jsonMatch[0]);
