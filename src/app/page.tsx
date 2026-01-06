@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Step = 'requirement' | 'script' | 'storyboard' | 'character' | 'keyframes' | 'video-prompts' | 'download';
 
@@ -127,6 +127,8 @@ export default function Home() {
   const [videoPrompts, setVideoPrompts] = useState<VideoPrompts | null>(null);
   const [selectedPromptScene, setSelectedPromptScene] = useState<number | null>(null);
   const [fastMode, setFastMode] = useState(false); // 快速预览模式
+  const [stylePreviewImages, setStylePreviewImages] = useState<Record<string, string>>({}); // 画风预览图片映射
+  const [generatingPreviews, setGeneratingPreviews] = useState(false); // 是否正在生成预览
 
   const artStyles = [
     { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewColor: 'from-gray-700 to-gray-900' },
@@ -159,6 +161,53 @@ export default function Home() {
       setLoadingProgress(progress);
     } else {
       setLoadingProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // 检查画风预览图片
+  const checkStylePreviews = async () => {
+    try {
+      const response = await fetch('/api/style-previews/generate');
+      const data = await response.json();
+
+      if (data.hasPreviews) {
+        const previewMap: Record<string, string> = {};
+        data.styles.forEach((style: any) => {
+          previewMap[style.style] = style.url;
+        });
+        setStylePreviewImages(previewMap);
+      }
+    } catch (error) {
+      console.error('检查画风预览失败:', error);
+    }
+  };
+
+  // 生成画风预览图片
+  const generateStylePreviews = async () => {
+    setGeneratingPreviews(true);
+    try {
+      const response = await fetch('/api/style-previews/generate', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const previewMap: Record<string, string> = {};
+        data.results.forEach((result: any) => {
+          if (result.success) {
+            previewMap[result.style] = result.url;
+          }
+        });
+        setStylePreviewImages(previewMap);
+        alert(`成功生成 ${data.results.filter((r: any) => r.success).length} / ${data.results.length} 张预览图`);
+      } else {
+        throw new Error(data.error || '生成失败');
+      }
+    } catch (error) {
+      alert('生成预览图片失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setGeneratingPreviews(false);
     }
   };
 
@@ -522,6 +571,11 @@ export default function Home() {
     return steps.indexOf(currentStep);
   };
 
+  // 在组件加载时检查画风预览图片
+  useEffect(() => {
+    checkStylePreviews();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 头部 */}
@@ -646,9 +700,20 @@ export default function Home() {
 
             {/* 画风选择 */}
             <div className="mb-6">
-              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
-                选择画风
-              </label>
+              <div className="flex items-center justify-between mb-3">
+                <label className="font-medium text-gray-700 dark:text-gray-300">
+                  选择画风
+                </label>
+                {Object.keys(stylePreviewImages).length === 0 && (
+                  <button
+                    onClick={generateStylePreviews}
+                    disabled={generatingPreviews}
+                    className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {generatingPreviews ? '生成中...' : '生成预览图'}
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {artStyles.map((style) => (
                   <button
@@ -660,10 +725,21 @@ export default function Home() {
                         : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
                     }`}
                   >
-                    {/* 预览渐变色块 */}
-                    <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                    </div>
+                    {/* 预览图片或渐变色块 */}
+                    {stylePreviewImages[style.name] ? (
+                      <div className="aspect-square relative overflow-hidden">
+                        <img
+                          src={stylePreviewImages[style.name]}
+                          alt={style.name}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                      </div>
+                    ) : (
+                      <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                      </div>
+                    )}
 
                     {/* 画风名称和描述 */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
