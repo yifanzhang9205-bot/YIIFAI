@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
     const body: DownloadRequest = await request.json();
     const { keyframes, videoPrompts, scriptTitle } = body;
 
+    console.log('开始打包下载，关键帧数量:', keyframes?.length, '视频提示词:', !!videoPrompts);
+
     if (!keyframes || keyframes.length === 0) {
       return NextResponse.json(
         { error: '没有可下载的内容' },
@@ -50,20 +52,37 @@ export async function POST(request: NextRequest) {
 
     // 1. 添加关键帧图片
     const keyframesFolder = zip.folder('keyframes');
+    let successCount = 0;
+
     for (const keyframe of keyframes) {
       try {
-        // 下载图片
+        console.log(`下载场景${keyframe.sceneNumber}图片: ${keyframe.imageUrl}`);
+
+        // 下载图片，添加超时和重试
         const imageResponse = await axios.get(keyframe.imageUrl, {
           responseType: 'arraybuffer',
+          timeout: 30000, // 30秒超时
         });
 
-        // 使用场景编号作为文件名，确保对应关系
-        const fileName = `scene_${String(keyframe.sceneNumber).padStart(2, '0')}.png`;
-        keyframesFolder?.file(fileName, imageResponse.data);
+        if (imageResponse.data && imageResponse.data.byteLength > 0) {
+          // 使用场景编号作为文件名，确保对应关系
+          const fileName = `scene_${String(keyframe.sceneNumber).padStart(2, '0')}.png`;
+          keyframesFolder?.file(fileName, imageResponse.data);
+          successCount++;
+          console.log(`✓ 场景${keyframe.sceneNumber}下载成功，文件大小: ${imageResponse.data.byteLength} bytes`);
+        } else {
+          console.warn(`场景${keyframe.sceneNumber}下载的图片为空`);
+        }
       } catch (error) {
         console.error(`下载场景${keyframe.sceneNumber}图片失败:`, error);
+        // 添加一个占位文件，说明下载失败
+        const errorText = `场景${keyframe.sceneNumber}图片下载失败\n\n图片URL: ${keyframe.imageUrl}\n\n可能原因：\n1. 图片链接已过期\n2. 网络连接问题\n3. 图片服务器限制\n\n建议：请重新生成关键帧后再试`;
+        const fileName = `scene_${String(keyframe.sceneNumber).padStart(2, '0')}_ERROR.txt`;
+        keyframesFolder?.file(fileName, errorText);
       }
     }
+
+    console.log(`关键帧下载完成: ${successCount}/${keyframes.length} 成功`);
 
     // 2. 添加提示词文件
     if (videoPrompts) {
@@ -147,10 +166,12 @@ prompts/         - 视频生成提示词文件夹，每个场景一个txt文件�
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' }) as Buffer;
 
     // 返回ZIP文件
+    // 使用纯ASCII文件名避免编码问题
+    const asciiFilename = `download_${Date.now()}.zip`;
     return new NextResponse(zipBuffer as any, {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(scriptTitle)}_素材包.zip"`,
+        'Content-Disposition': `attachment; filename="${asciiFilename}"`,
       },
     });
 
