@@ -62,35 +62,62 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const sceneEnhancementPrompt = `你是一位资深电影美术指导和视觉艺术家，擅长将剧本情感转化为视觉语言。
-你的任务是为每个场景生成优化的AI生图提示词，让画面具有电影感和戏剧张力。
+    const sceneEnhancementPrompt = `你是一位获奖的电影美术指导和视觉艺术家，擅长将剧本情感和叙事细节转化为震撼的视觉语言。
+你的核心使命：为每个场景生成**令人惊叹、细节丰富、戏剧性极强**的AI生图提示词。
 
-## 关键帧创作思维
+## 关键帧创作思维（细节优先）
 
-**1. 情感即视觉（Emotion is Visual）**
-- 场景的情绪基调决定了光影、色彩、构图
-- 紧张：强烈的对比度、锐利的阴影、动态构图
-- 温馨：柔和的光线、暖色调、开放式构图
-- 忧郁：冷色调、低对比度、留白空间
+**核心原则：每个细节都必须服务于戏剧目标和情感表达**
 
-**2. 人物即故事（Character is Story）**
-- 人物的姿态、表情要反映他们在故事中的状态
-- 人物的服装、道具要服务于叙事功能
-- 多人场景：人物之间的关系要通过构图和站位来体现
+**1. 剧本细节即视觉细节（Script Detail = Visual Detail）**
+- 动作细节：剧本中的每个动作都要在画面中体现
+  - ❌ 错误："他拿起电话"
+  - ✅ 正确："他的手指颤抖着拿起电话，屏幕的光照亮他布满血丝的眼睛"
+- 环境细节：场景的时间、地点、天气都要在画面中体现
+  - ❌ 错误："房间"
+  - ✅ 正确："深夜的卧室，月光透过窗帘缝隙照进来，地板上散落着几张揉皱的纸"
+- 道具细节：剧本提到的道具必须在画面中清晰可见
 
-**3. 场景即氛围（Scene is Atmosphere）**
-- 环境不仅仅是背景，是情绪的容器
-- 光影要增强戏剧效果
-- 色彩要传达情感基调
+**2. 情感即视觉（Emotion is Visual）**
+- **每个视觉元素都要传达情感**：
+  - 紧张：强烈的对比度、锐利的阴影、动态构图、紧绷的姿态
+  - 温馨：柔和的光线、暖色调、开放式构图、放松的姿态
+  - 忧郁：冷色调、低对比度、留白空间、低垂的肩膀
+  - 希望：明亮的高光、温暖的光线、向上的构图
+- **光影即情感**：光线方向、强度、色温都要服务于情感基调
 
-**4. 构图即焦点（Composition is Focus）**
-- 确保观众视线聚焦在叙事重点上
-- 利用引导线、景深、留白强化焦点
-- 构图要服务于戏剧目标
+**3. 人物即故事（Character is Story）**
+- **人物姿态和表情必须反映当前状态**：
+  - 疲惫：肩膀下垂、眼皮下垂、步履沉重
+  - 兴奋：身体前倾、眼睛睁大、手势活跃
+  - 紧张：身体僵硬、手部抓握、眼神游移
+  - 自信：姿态挺拔、眼神坚定、动作从容
+- **人物服装和道具必须与设定一致**：
+  - 每个角色的服装细节、颜色、款式都要准确
+  - 道具要服务于叙事功能（如：诊断书、照片、钥匙等）
 
-## 场景分析
+**4. 场景即氛围（Scene is Atmosphere）**
+- **环境是情绪的容器**：
+  - 环境不仅仅是背景，要主动传达情感
+  - 光影、色彩、构图都要服务于情感基调
+  - 天气、时间、季节都要在画面中体现
 
-${storyboard.scenes.map((scene: any) => {
+**5. 构图即焦点（Composition is Focus）**
+- **引导观众视线到叙事重点**：
+  - 利用引导线（道路、光影、建筑线条）引导视线
+  - 利用景深（浅景深聚焦主体，深景深展现环境）
+  - 利用留白（突出主体，营造孤独或沉思感）
+
+**6. 电影感质感（Cinematic Quality）**
+- **添加电影摄影的专业词汇**：
+  - 光影：cinematic lighting, rim light, dramatic shadows, chiaroscuro
+  - 构图：rule of thirds, golden ratio, leading lines, depth of field
+  - 质感：film grain, lens flare, vignette, color grading
+  - 镜头：wide angle, telephoto, macro, dolly shot
+
+## 剧本详细分析
+
+${storyboard.scenes.map((scene: any, index: number) => {
   const characters = sceneCharactersMap[scene.sceneNumber] || [];
   return `
 【场景${scene.sceneNumber}】
@@ -103,7 +130,11 @@ ${storyboard.scenes.map((scene: any) => {
 - 色温：${scene.colorTemperature}
 - 氛围：${scene.mood}
 - 出场人物：${characters.length > 0 ? characters.map((c: any) => c.name).join(', ') : '无'}
-${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender}，${c.ethnicity}，外貌：${c.appearance}，服装：${c.outfit}，表情：${c.expression}`).join('\n') : ''}
+${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender}，${c.ethnicity}
+    外貌特征：${c.appearance}
+    服装细节：${c.outfit}
+    表情状态：${c.expression}
+    独特标识：${c.appearance}` ).join('\n') : ''}
 - 原始提示词：${scene.prompt}
 `;
 }).join('\n')}
@@ -115,22 +146,24 @@ ${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender
   "enhancedPrompts": [
     {
       "sceneNumber": 1,
-      "enhancedPrompt": "优化后的英文生图提示词（包含：1.完整的场景描述 2.人物细节（如果有）3.光影效果 4.色彩氛围 5.构图强化 6.情感表达，比原始prompt更具电影感和戏剧性）"
+      "enhancedPrompt": "优化后的英文生图提示词（必须包含：1.场景完整细节描述 2.每个出场人物的详细特征 3.人物姿态和表情细节 4.光影效果描述 5.色彩氛围描述 6.构图细节 7.情感表达强化 8.电影质感词汇，让画面细节丰富、戏剧性强、令人惊艳）"
     }
   ]
 }
 \`\`\`
 
-## 优化要求
+## 优化要求（必须严格遵守）
 
-1. **强化情感表达**：用视觉元素增强场景的情绪基调
-2. **深化氛围营造**：光影、色彩、构图要服务于情感
-3. **细化人物细节**：人物的表情、姿态要反映他们的状态
-4. **增强电影感**：添加电影摄影的质感描述（如：cinematic lighting, dramatic shadows, depth of field等）
-5. **保持一致性**：人物特征、服装、道具要与设定一致
-6. **保留原始意图**：不要改变分镜的核心意图，只是强化表现力
+1. **剧本细节优先**：剧本中的每个动作、道具、环境细节都要在prompt中体现
+2. **人物细节精确**：每个出场人物的外貌、服装、表情、姿态都要详细描述
+3. **情感视觉化**：每个视觉元素都要服务于情感表达，用光影、色彩、构图传达情绪
+4. **环境氛围强化**：环境不是背景，要主动传达情感，描述时间、天气、季节
+5. **电影质感词汇**：添加cinematic lighting, dramatic shadows, depth of field等专业词汇
+6. **构图细节描述**：描述具体如何引导视线、如何聚焦叙事重点
+7. **细节丰富性**：每个prompt都要有5-7个不同的视觉细节，确保画面丰富
+8. **保留原始意图**：不要改变分镜的核心意图，只是强化细节和表现力
 
-请为每个场景生成优化后的prompt，让画面更有戏剧张力和电影质感。`;
+请为每个场景生成细节丰富、戏剧性强的prompt，让画面令人惊叹！`;
 
     const sceneEnhancementMessages = [
       { role: 'system' as const, content: '你是资深电影美术指导，擅长将情感转化为视觉语言。' },
