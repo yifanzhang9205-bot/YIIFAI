@@ -217,11 +217,16 @@ ${scriptInfo}
       { role: 'user' as const, content: userPrompt },
     ];
 
+    console.log('开始调用LLM，使用模型: doubao-seed-1-6-flash-250615');
+    const startTime = Date.now();
+
     const response = await client.invoke(messages, {
       model: 'doubao-seed-1-6-flash-250615', // 使用快速模型
       temperature: 0.3
     });
 
+    const elapsedTime = Date.now() - startTime;
+    console.log(`LLM调用完成，耗时: ${elapsedTime}ms`);
     console.log('LLM原始返回内容:', response.content);
 
     // 提取JSON - 移除markdown标记

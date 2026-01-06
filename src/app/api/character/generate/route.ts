@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
       return {
         name: charName,
-        scenes: charScenes.map(s => ({
+        scenes: charScenes.map((s: any) => ({
           sceneNumber: s.sceneNumber,
           location: s.location,
           timeOfDay: s.timeOfDay,
@@ -163,7 +163,7 @@ ${characterSceneAnalysis.map(analysis => `
 【${analysis.name}】
 - 出现场景数：${analysis.sceneCount}
 - 场景详情：
-${analysis.scenes.map(s => `  场景${s.sceneNumber}：${s.location}（${s.timeOfDay}），动作：${s.action}，情感：${s.emotionalBeat}，视觉钩子：${s.visualHook}`).join('\n')}
+${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${s.timeOfDay}），动作：${s.action}，情感：${s.emotionalBeat}，视觉钩子：${s.visualHook}`).join('\n')}
 `).join('\n')}
 
 重要提示：

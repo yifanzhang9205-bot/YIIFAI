@@ -232,9 +232,9 @@ export default function Home() {
     updateLoading(true, '正在生成分镜脚本（可能需要1-2分钟）...');
 
     try {
-      // 创建带超时的fetch
+      // 创建带超时的fetch - 增加到10分钟
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分钟超时
+      const timeoutId = setTimeout(() => controller.abort(), 600000); // 10分钟超时
 
       const response = await fetch('/api/storyboard/generate', {
         method: 'POST',
@@ -250,10 +250,13 @@ export default function Home() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API返回错误:', response.status, errorText);
         throw new Error(`HTTP错误：${response.status}`);
       }
 
       const data = await response.json();
+      console.log('分镜生成返回:', data);
 
       if (data.success) {
         setStoryboard(data.storyboard);
@@ -263,11 +266,12 @@ export default function Home() {
         throw new Error(data.error || '生成分镜失败');
       }
     } catch (err) {
+      console.error('生成分镜错误:', err);
       if (err instanceof Error) {
         if (err.name === 'AbortError') {
           setError('生成超时，请稍后重试或简化剧本场景');
         } else {
-          setError(err.message);
+          setError(err.message || '生成分镜失败');
         }
       } else {
         setError('生成分镜失败，请检查网络连接');

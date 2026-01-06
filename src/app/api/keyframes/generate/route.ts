@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           const imageIndex = characterImageMap[charInfo.name];
           return imageIndex !== undefined ? characterImages[imageIndex] : null;
         })
-        .filter((img): img is string => img !== null);
+        .filter((img: any): img is string => img !== null);
 
       // 如果没有找到匹配的人物图，使用第一张图作为风格参考
       return sceneCharacterImages.length > 0 ? sceneCharacterImages : (characterImages.length > 0 ? [characterImages[0]] : []);
