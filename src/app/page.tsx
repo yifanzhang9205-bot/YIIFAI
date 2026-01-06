@@ -128,6 +128,9 @@ export default function Home() {
   const [selectedPromptScene, setSelectedPromptScene] = useState<number | null>(null);
   const [fastMode, setFastMode] = useState(false); // 快速预览模式
 
+  // 图片预览状态
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+
   // 画风定义（包含预览图片路径）
   const artStyles = [
     { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewUrl: '/style-previews/写实风格.jpg' },
@@ -777,26 +780,38 @@ export default function Home() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <button
-                onClick={editScript}
+                onClick={() => setCurrentStep('requirement')}
                 disabled={loading}
-                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
               >
-                {loading ? '修改中...' : '修改剧本'}
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                返回上一步
               </button>
-              <button
-                onClick={confirmScript}
-                disabled={loading}
-                className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
-              >
-                {loading ? '生成中...' : (
-                  <>
-                    确认，生成分镜
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </>
-                )}
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={editScript}
+                  disabled={loading}
+                  className="rounded-xl border-2 border-blue-500 px-8 py-4 font-semibold text-blue-700 transition-all hover:border-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-900/20 disabled:opacity-50"
+                >
+                  {loading ? '修改中...' : '修改剧本'}
+                </button>
+                <button
+                  onClick={confirmScript}
+                  disabled={loading}
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+                >
+                  {loading ? '生成中...' : (
+                    <>
+                      确认，生成分镜
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -877,29 +892,68 @@ export default function Home() {
             </div>
 
             {/* 分镜脚本预览 */}
-            {storyboard && (
+            {storyboard && script && (
               <div className="mb-6">
                 <h3 className="mb-4 font-semibold text-gray-700 dark:text-gray-300">
                   分镜脚本预览（共{storyboard.scenes.length}场）
                 </h3>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {storyboard.scenes.slice(0, 6).map((scene) => (
-                    <div key={scene.sceneNumber} className="rounded-xl bg-gray-50 p-4 dark:bg-gray-700 border border-gray-100 dark:border-gray-600">
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-sm font-bold text-white">
-                          {scene.sceneNumber}
-                        </span>
-                        <div className="flex-1">
-                          <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
-                            {scene.shotType} · {scene.cameraAngle} · {scene.cameraMovement}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                            {scene.composition}
-                          </p>
+                  {storyboard.scenes.slice(0, 6).map((scene) => {
+                    const scriptScene = script.scenes[scene.sceneNumber - 1];
+                    return (
+                      <div key={scene.sceneNumber} className="rounded-xl bg-gray-50 p-4 dark:bg-gray-700 border border-gray-100 dark:border-gray-600">
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-sm font-bold text-white">
+                            {scene.sceneNumber}
+                          </span>
+                          <div className="flex-1">
+                            <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+                              {scene.shotType} · {scene.cameraAngle} · {scene.cameraMovement}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                              {scene.composition}
+                            </p>
+                          </div>
+                        </div>
+                        {/* 剧本详情 */}
+                        <div className="ml-11 space-y-2">
+                          {scriptScene && (
+                            <>
+                              {scriptScene.action && (
+                                <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2">
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">动作</span>
+                                  <p className="text-xs text-gray-700 dark:text-gray-300">{scriptScene.action}</p>
+                                </div>
+                              )}
+                              {scriptScene.dialogue && (
+                                <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-lg p-2">
+                                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 block mb-1">对话</span>
+                                  <p className="text-xs text-gray-700 dark:text-gray-300 italic">"{scriptScene.dialogue}"</p>
+                                </div>
+                              )}
+                              <div className="flex gap-2">
+                                {scriptScene.location && (
+                                  <span className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                                    📍 {scriptScene.location}
+                                  </span>
+                                )}
+                                {scriptScene.timeOfDay && (
+                                  <span className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                                    🕐 {scriptScene.timeOfDay}
+                                  </span>
+                                )}
+                                {scriptScene.mood && (
+                                  <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                                    💭 {scriptScene.mood}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {storyboard.scenes.length > 6 && (
                     <div className="text-center py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -936,7 +990,17 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+              <button
+                onClick={() => setCurrentStep('script')}
+                disabled={loading}
+                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                返回上一步
+              </button>
               <button
                 onClick={generateCharacters}
                 disabled={loading}
@@ -980,11 +1044,11 @@ export default function Home() {
             <div className="mb-8 grid gap-6 sm:grid-cols-2">
               {characterDesign.characters.map((character, index) => (
                 <div key={character.name} className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg group relative">
-                  <div className="aspect-[720/1280] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div className="aspect-[720/1280] w-full overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer" onClick={() => setPreviewImage({ url: characterDesign.characterImages[index], title: character.name })}>
                     <img
                       src={characterDesign.characterImages[index]}
                       alt={character.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
                   </div>
                   <div className="absolute top-3 right-3">
@@ -1006,7 +1070,17 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+              <button
+                onClick={() => setCurrentStep('storyboard')}
+                disabled={loading}
+                className="rounded-xl border-2 border-gray-200 px-8 py-4 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                返回上一步
+              </button>
               <button
                 onClick={confirmCharacters}
                 disabled={loading}
@@ -1039,11 +1113,13 @@ export default function Home() {
             <div className="mb-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {keyframes.map((keyframe) => (
                 <div key={keyframe.sceneNumber} className="group relative aspect-[720/1280] overflow-hidden rounded-xl border-2 border-gray-200 dark:border-gray-600 shadow-lg">
-                  <img
-                    src={keyframe.imageUrl}
-                    alt={`场景${keyframe.sceneNumber}`}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                  />
+                  <div className="h-full w-full cursor-pointer" onClick={() => setPreviewImage({ url: keyframe.imageUrl, title: `场景${keyframe.sceneNumber}` })}>
+                    <img
+                      src={keyframe.imageUrl}
+                      alt={`场景${keyframe.sceneNumber}`}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
                   
                   {/* 重新生成按钮 */}
                   <button
@@ -1078,7 +1154,17 @@ export default function Home() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 共 {keyframes.length} 个关键帧，使用 image-to-image 技术保持人物一致性
               </p>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => setCurrentStep('character')}
+                  disabled={loading}
+                  className="rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                  </svg>
+                  返回上一步
+                </button>
                 <button
                   onClick={downloadAll}
                   className="rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 font-semibold text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 flex items-center gap-2"
@@ -1368,6 +1454,37 @@ export default function Home() {
                 创建新剧本
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 图片预览弹窗 */}
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.95)" }}
+            onClick={() => setPreviewImage(null)}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm"
+              title="关闭预览"
+            >
+              <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+              <img
+                src={previewImage.url}
+                alt={previewImage.title}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-sm px-6 py-3 rounded-full">
+                <p className="text-white font-medium text-lg">{previewImage.title}</p>
+              </div>
+            </div>
+            <p className="absolute bottom-6 text-gray-400 text-sm">点击任意区域或右上角关闭预览</p>
           </div>
         )}
       </main>
