@@ -193,7 +193,7 @@ ${scriptInfo}
       { role: 'user' as const, content: userPrompt },
     ];
 
-    const response = await client.invoke(messages, { temperature: 0.7 });
+    const response = await client.invoke(messages, { temperature: 0.3 });
 
     // 提取JSON
     const jsonMatch = response.content.match(/\{[\s\S]*\}/);
