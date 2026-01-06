@@ -19,6 +19,28 @@ interface Keyframes {
   scenes: KeyframeScene[];
 }
 
+// 定义画风关键词映射（与分镜生成保持一致）
+const artStyleKeywordsMap: Record<string, string> = {
+  '写实风格': 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic',
+  '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
+  '动漫风格': 'anime style, cel shading, vivid colors, manga, detailed',
+  '漫画风格': 'manga style, comic style, black and white manga, detailed line art, anime',
+  '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
+  '油画风格': 'oil painting, textured, classic art, oil brushstrokes, rich colors',
+  '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
+  '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing',
+  '吉卜力风格': 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical',
+  '水墨风格': 'ink painting, traditional chinese art, brush strokes, minimalist, black ink',
+  '赛璐璐风格': 'cel shaded, anime, bold outlines, flat colors, graphic novel style',
+  '蒸汽朋克': 'steampunk, victorian, brass gears, steam, industrial, ornate',
+  '暗黑哥特': 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting',
+  '浮世绘风格': 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns',
+  '低多边形': 'low poly, geometric, flat shading, minimalist, 3D render',
+  '黏土动画': 'claymation, clay animation, stop motion, textured, hand crafted',
+  '复古油画': 'vintage painting, classical art, renaissance, rich textures, aged',
+  '霓虹艺术': 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors',
+};
+
 // 智能角色分析函数 - 识别角色类型、性别、年龄等关键信息
 function analyzeCharacter(character: any): {
   species: string; // 物种：human/animal
@@ -256,6 +278,12 @@ export async function POST(request: NextRequest) {
 - **人物服装和道具必须与设定一致**：
   - 每个角色的服装细节、颜色、款式都要准确
   - 道具要服务于叙事功能（如：诊断书、照片、钥匙等）
+- **人物动作必须与剧情完美契合**：
+  - 从剧本的action推断人物正在做什么（不是静态站立，而是动态的动作）
+  - 从剧本的dialogue推断人物在说这句话时的表情和眼神
+  - 从剧本的mood推断人物的整体状态和肢体语言
+  - 多人物时，描述人物之间的互动关系（对视、接触、距离、姿态差异）
+  - 每个动作都要用具体的视觉动词（如"手指颤抖"、"身体前倾"、"眼神游离"）
 
 **4. 场景即氛围（Scene is Atmosphere）**
 - **环境是情绪的容器**：
@@ -324,6 +352,18 @@ ${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender
 **第二优先级：剧本细节优先**
 5. 剧本中的每个动作、道具、环境细节都要在prompt中体现
 6. 人物细节精确：每个出场人物的外貌、服装、表情、姿态都要详细描述
+7. **人物动作与剧情完美契合**：
+   - 从原始prompt中提取人物的动态信息，强化视觉细节
+   - 如果原始prompt有"拿起电话"→ 强化为"手指颤抖着拿起电话，屏幕的蓝光照亮他布满血丝的眼睛"
+   - 如果原始prompt有"愤怒地看着对方"→ 强化为"紧咬嘴唇，眼神冰冷如刀，眉头紧锁，拳头紧紧握住"
+   - 如果原始prompt有"开心地大笑"→ 强化为"嘴角上扬到极致，眼睛弯成月牙，头向后仰，双手高举"
+8. **多人物互动**：
+   - 描述人物之间的空间关系（距离、角度、站位）
+   - 描述人物之间的视觉互动（对视、凝视、回避）
+   - 描述人物之间的肢体接触或即将接触的状态
+9. **道具互动**：
+   - 如果有人物使用道具，描述如何使用（手指、抓握、举起等）
+   - 描述道具与人物的关系（道具的位置、大小、光线影响）
 
 **第三优先级：视觉表达**
 7. 情感视觉化：每个视觉元素都要服务于情感表达，用光影、色彩、构图传达情绪
@@ -340,8 +380,13 @@ ${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender
 - [ ] 所有角色的性别是否准确？（male/female绝不混淆）
 - [ ] 所有角色的年龄是否合理？（child就是儿童的样子）
 - [ ] 剧本中的动作、对话是否都体现在画面中？
+- [ ] **人物动作是否与剧情契合？**（不是静态摆拍，而是动态的动作描述）
+- [ ] **人物表情是否与剧情契合？**（根据dialogue和mood推断的表情细节）
+- [ ] **人物姿态是否与剧情契合？**（根据情感状态推断的肢体语言）
+- [ ] **多人物是否有互动？**（不是简单并列，而是有空间关系和视觉互动）
 - [ ] 场景的环境细节（时间、地点、天气）是否描述清楚？
 - [ ] 情感基调是否通过光影、色彩、构图准确传达？
+- [ ] 每个人物都有具体的视觉动词？（如"手指颤抖"、"身体前倾"、"眼神游离"，不是笼统的"坐着"、"站着"）
 
 请为每个场景生成细节丰富、戏剧性强、角色100%准确的prompt，让画面令人惊叹！`;
 
@@ -438,7 +483,19 @@ ${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：${c.gender
 
       // 增强prompt：如果场景有多个角色，在prompt中明确描述
       const sceneMapping = sceneCharacterMapping?.find((m: any) => m.sceneNumber === scene.sceneNumber);
+
+      // 【第一步】强制添加画风关键词（在最前面，确保画风100%一致）
+      const artStyleName = storyboard.artStyle || '写实风格';
+      const artStyleKeywords = artStyleKeywordsMap[artStyleName] || artStyleKeywordsMap['写实风格'];
+      const forcedArtStyle = `[ART STYLE MUST MATCH: ${artStyleKeywords}]. `;
+
       let enhancedPrompt = scene.prompt;
+
+      // 在prompt的最前面添加画风关键词（优先级最高）
+      if (!enhancedPrompt.toLowerCase().includes(artStyleKeywords.split(',')[0].trim().toLowerCase())) {
+        enhancedPrompt = forcedArtStyle + enhancedPrompt;
+        console.log(`  ✓ 已添加画风关键词: ${artStyleName}`);
+      }
 
       if (sceneMapping && sceneMapping.characters.length > 0) {
         // 多人物场景：在prompt中明确标注每个角色
