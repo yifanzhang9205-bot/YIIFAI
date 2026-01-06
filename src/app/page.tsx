@@ -634,7 +634,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 步骤1：需求输入 */}
+        {/* 步骤1：需求输入 + 画风选择 */}
         {currentStep === 'requirement' && (
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
@@ -643,6 +643,46 @@ export default function Home() {
             <p className="mb-6 text-gray-600 dark:text-gray-400">
               描述你想要创作的视频内容，AI 将为你生成完整的剧本、分镜和视频提示词
             </p>
+
+            {/* 画风选择 */}
+            <div className="mb-6">
+              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+                选择画风
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {artStyles.map((style) => (
+                  <button
+                    key={style.name}
+                    onClick={() => setSelectedStyle(style.name)}
+                    className={`group relative rounded-xl border-2 overflow-hidden transition-all ${
+                      selectedStyle === style.name
+                        ? 'border-blue-500 shadow-lg shadow-blue-500/30'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    {/* 预览渐变色块 */}
+                    <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    </div>
+
+                    {/* 画风名称和描述 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                      <div className="font-semibold text-white text-xs">{style.name}</div>
+                    </div>
+
+                    {/* 选中标记 */}
+                    {selectedStyle === style.name && (
+                      <div className="absolute top-1 right-1 h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <textarea
               value={requirement}
               onChange={(e) => setRequirement(e.target.value)}
@@ -744,7 +784,7 @@ export default function Home() {
               >
                 {loading ? '生成中...' : (
                   <>
-                    确认，选择画风
+                    确认，生成分镜
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -755,18 +795,30 @@ export default function Home() {
           </div>
         )}
 
-        {/* 步骤3：画风选择和分镜 */}
+        {/* 步骤3：分镜确认 */}
         {currentStep === 'storyboard' && (
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-              第三步：选择画风并生成分镜
+              第三步：确认分镜脚本
             </h2>
-            
+
+            {/* 当前选择的画风显示 */}
+            <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="flex items-center gap-4">
+                <div className={`h-16 w-16 rounded-lg bg-gradient-to-br ${artStyles.find(s => s.name === selectedStyle)?.previewColor || 'from-gray-700 to-gray-900'}`} />
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">当前画风</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{selectedStyle}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{artStyles.find(s => s.name === selectedStyle)?.description}</div>
+                </div>
+              </div>
+            </div>
+
             {/* 画风强度调节 */}
-            <div className="mb-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
+            <div className="mb-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <label className="font-medium text-gray-700 dark:text-gray-300">
-                  画风强度调节
+                  画风强度
                 </label>
                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                   {artStyleStrength}%
@@ -778,7 +830,7 @@ export default function Home() {
                 max="100"
                 value={artStyleStrength}
                 onChange={(e) => setArtStyleStrength(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-600 accent-blue-500"
               />
               <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span>写实平衡</span>
@@ -787,7 +839,7 @@ export default function Home() {
             </div>
 
             {/* 快速预览模式开关 */}
-            <div className="mb-8 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 dark:from-amber-900/20 dark:to-orange-900/20">
+            <div className="mb-6 rounded-xl bg-amber-50 p-4 dark:bg-amber-900/20">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="font-medium text-gray-700 dark:text-gray-300">
@@ -812,52 +864,14 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 画风选择 */}
-            <div className="mb-8">
-              <label className="mb-4 block font-medium text-gray-700 dark:text-gray-300">
-                选择画风（点击预览效果）
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {artStyles.map((style) => (
-                  <button
-                    key={style.name}
-                    onClick={() => setSelectedStyle(style.name)}
-                    className={`group relative rounded-xl border-2 overflow-hidden transition-all ${
-                      selectedStyle === style.name
-                        ? 'border-blue-500 shadow-lg shadow-blue-500/30'
-                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
-                    }`}
-                  >
-                    {/* 预览渐变色块 */}
-                    <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                    </div>
-                    
-                    {/* 画风名称和描述 */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <div className="font-semibold text-white text-sm">{style.name}</div>
-                      <div className="text-xs text-white/80">{style.description}</div>
-                    </div>
-                    
-                    {/* 选中标记 */}
-                    {selectedStyle === style.name && (
-                      <div className="absolute top-2 right-2 h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                        <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* 分镜脚本预览 */}
             {storyboard && (
-              <div className="mb-8">
+              <div className="mb-6">
                 <h3 className="mb-4 font-semibold text-gray-700 dark:text-gray-300">
-                  分镜脚本预览
+                  分镜脚本预览（共{storyboard.scenes.length}场）
                 </h3>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {storyboard.scenes.slice(0, 4).map((scene) => (
+                  {storyboard.scenes.slice(0, 6).map((scene) => (
                     <div key={scene.sceneNumber} className="rounded-xl bg-gray-50 p-4 dark:bg-gray-700 border border-gray-100 dark:border-gray-600">
                       <div className="flex items-start gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-sm font-bold text-white">
@@ -874,10 +888,10 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-                  {storyboard.scenes.length > 4 && (
+                  {storyboard.scenes.length > 6 && (
                     <div className="text-center py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        还有 {storyboard.scenes.length - 4} 场...
+                        还有 {storyboard.scenes.length - 6} 场...
                       </p>
                     </div>
                   )}
@@ -886,7 +900,7 @@ export default function Home() {
             )}
 
             {/* 优化提示 */}
-            <div className="mb-4 rounded-xl bg-green-50 dark:bg-green-900/20 p-4 border border-green-200 dark:border-green-800">
+            <div className="mb-4 rounded-xl bg-green-50 p-4 border border-green-200 dark:bg-green-900/20 dark:border-green-800">
               <div className="flex items-start gap-3">
                 <svg className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

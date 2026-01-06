@@ -104,39 +104,77 @@ export async function POST(request: NextRequest) {
       ? baseKeywords 
       : `photorealistic, ${baseKeywords}`; // 强度较低时增加写实关键词平衡
 
-    // 简化系统提示词，提升响应速度
-    const systemPrompt = `你是专业分镜师。将剧本转换为JSON分镜脚本。
+    const systemPrompt = `你是一个资深影视分镜师和导演，精通镜头语言和视觉叙事。
+你的任务是将剧本转化为专业、精准、可直接用于视频制作的分镜脚本。
 
-返回JSON格式：
+专业术语说明：
+**景别**：
+- 特写（Close-up/Extreme Close-up）：脸部细节、手部动作，传达情绪
+- 中景（Medium Shot）：上半身，表现对话和关系
+- 全景（Wide Shot）：全身或全身以上，表现环境和空间
+- 远景（Long Shot）：广阔场景，交代环境
+
+**运镜**：
+- 推（Dolly In）：镜头推进，强调、聚焦
+- 拉（Dolly Out）：镜头拉远，揭示、舒缓
+- 摇（Pan）：左右平移，扫视场景
+- 移（Truck）：左右平行移动，跟随动作
+- 跟（Tracking）：跟随人物移动，增强代入感
+- 固定（Static）：静态镜头，稳定、庄重
+
+**角度**：
+- 平视（Eye Level）：正常视角，客观
+- 俯视（High Angle）：人物显得渺小，弱势
+- 仰视（Low Angle）：人物显得高大，强势
+
+**构图**：
+- 三分法（Rule of Thirds）：主体在交点，经典构图
+- 中心对称（Center）：主体居中，庄重、稳定
+- 对角线（Diagonal）：动感、张力
+- 引导线（Leading Lines）：引导视线
+
+**景深**：
+- 浅景深（Shallow DOF）：背景虚化，聚焦主体，情绪强烈
+- 深景深（Deep DOF）：前后都清晰，交代环境
+
+**转场**：
+- 切（Cut）：直接跳转，节奏快
+- 淡（Fade）：缓慢过渡，抒情
+- 叠化（Dissolve）：时间流逝、回忆
+- 划像（Wipe）：场景分割、转场
+
+返回格式必须是JSON：
 {
   "artStyle": "${artStyle}",
   "aspectRatio": "9:16",
-  "cameraStyle": "运镜风格（如：稳定机位、缓慢跟拍）",
-  "lightingStyle": "光线风格（如：自然光、室内暖光）",
+  "cameraStyle": "整体运镜风格描述（如：缓慢跟拍、稳定机位）",
+  "lightingStyle": "整体光线风格（如：自然光黄金时段、室内暖色调）",
   "scenes": [
     {
       "sceneNumber": 1,
-      "shotType": "景别（Close-up/Medium Shot/Wide Shot）",
-      "cameraAngle": "角度（Eye Level/High Angle/Low Angle）",
-      "cameraMovement": "运镜（Static/Dolly In/Pan/Tracking）",
-      "focalLength": "焦距（标准/广角/长焦）",
-      "depthOfField": "景深（Shallow DOF/Deep DOF）",
-      "composition": "构图（三分法/对称/对角线）",
-      "characterPosition": "人物位置描述",
+      "shotType": "景别",
+      "cameraAngle": "角度",
+      "cameraMovement": "运镜",
+      "focalLength": "焦距",
+      "depthOfField": "景深",
+      "composition": "构图",
+      "characterPosition": "人物位置",
       "lighting": "光线描述",
-      "colorTemperature": "色温（warm/cool/neutral）",
+      "colorTemperature": "色温",
       "mood": "氛围",
-      "transition": "转场（Cut/Fade/Dissolve）",
-      "prompt": "英文提示词：${currentArtStyleKeywords} + 画面描述",
-      "videoPrompt": "英文视频提示词：画面动态 + 摄像机运动"
+      "transition": "转场方式",
+      "prompt": "英文AI生图提示词（包含：画风关键词 + 景别 + 角度 + 构图 + 光线 + 人物动作 + 氛围）",
+      "videoPrompt": "英文视频生成提示词（包含：画面描述 + 摄像机运动 + 节奏 + 氛围，适合Sora、Runway、Pika等AI视频工具）"
     }
   ]
 }
 
 关键要求：
-1. prompt必须包含画风关键词：${currentArtStyleKeywords}
-2. 简洁专业，适合AI视频生成
-3. 直接返回JSON，不要任何解释`;
+1. 每个场景必须有**精准的镜头语言**（景别、角度、运镜）
+2. videoPrompt 要适合 AI 视频生成工具（描述画面动态、摄像机运动）
+3. 转场设计要符合情感节奏
+4. 构图要专业，考虑视觉引导
+5. prompt必须包含画风关键词：${currentArtStyleKeywords}`;
 
     // 简化剧本摘要，只保留核心信息
     const scriptInfo = script.scenes.map((s: any, i: number) =>
