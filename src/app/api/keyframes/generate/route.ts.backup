@@ -236,9 +236,6 @@ export async function POST(request: NextRequest) {
     // ==================== 第一步：深度剧本理解 ====================
     // 让LLM先真正理解剧本，而不是直接生成prompt
 
-    // 定义变量用于存储分析结果
-    let sceneAnalysisMap: Record<number, any> = {};
-
     const scriptAnalysisPrompt = `你是一位专业的电影剧本分析师，你的任务是深度理解每个场景的**情感内核**和**视觉本质**。
 
 你的核心使命：读懂剧本，理解每个场景在讲什么、要传达什么、最震撼的视觉是什么。
@@ -412,6 +409,7 @@ ${scene.prompt}
       }
 
       const analysisData = JSON.parse(jsonString);
+      const sceneAnalysisMap: Record<number, any> = {};
       analysisData.sceneAnalysis.forEach((item: any) => {
         sceneAnalysisMap[item.sceneNumber] = item;
       });
@@ -532,6 +530,310 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
 \`\`\`
 
 请基于剧本的深度分析，生成每个场景的精准prompt。`;
+- 构图隐喻：构图如何体现关系（如"高角度俯视=角色渺小"、"低角度仰视=角色强大"）
+
+**4. 这个场景的戏剧性时刻在哪里？**
+- 动作高潮：最具戏剧张力的动作瞬间（如"拳头即将击中"、"手即将松开"）
+- 情感爆发：情绪最强烈的时刻（如"眼泪夺眶而出"、"怒吼的瞬间"）
+- 悬念时刻：最具期待感的瞬间（如"即将打开门"、"即将说出真相"）
+- 转折瞬间：情感或剧情的转折点（如"从愤怒转为悲伤"、"从希望转为绝望"）
+
+### 视觉细节三原则
+
+**原则1：情感必须可见化**
+❌ 错误："他看起来很伤心"
+✅ 正确："肩膀下垂，眼神失焦，嘴角微微颤抖，眼眶泛红"
+
+❌ 错误："她很愤怒"
+✅ 正确："紧咬嘴唇，眉头紧锁形成川字纹，额头青筋凸起，拳头紧紧握住指节发白"
+
+**原则2：动作必须动态化**
+❌ 错误："他拿起杯子"
+✅ 正确："左手五指缓缓张开，从桌面拿起咖啡杯，杯中液面随动作微微晃动"
+
+❌ 错误："她走向门口"
+✅ 正确："右脚迈出第一步，鞋跟在地板上发出清脆声响，身体重心前倾，左手悬在门把手上方"
+
+**原则3：细节必须叙事化**
+❌ 错误："房间里有一张桌子"
+✅ 正确："破旧的木质桌子占据房间角落，桌面上刻满划痕，一盏台灯投下昏黄的光圈，照亮桌面散落的三张照片"
+
+❌ 错误："穿着蓝色衣服"
+✅ 正确："深蓝色丝绸衬衫，扣子解到第二颗，袖口卷起到肘部，露出手腕上的旧手表"
+
+## 第二部分：人物状态深度推断
+
+从剧本的只言片语中，推断人物的完整状态：
+
+### 动作推断（从文字到视觉）
+- 剧本："拿起电话" → 推断："右手食指和拇指捏住听筒，缓缓提起贴近耳边，另一只手的食指悬在拨号键上方，微微颤抖"
+- 剧本："坐下" → 推断："身体重心下沉，背部贴上椅子靠背，双手自然垂落在膝盖上方，头部微微后仰"
+- 剧本："开门" → 推断："右手握住圆形门把手，顺时针旋转90度，左手推开门板，身体微微前倾准备跨入"
+
+### 表情推断（从情绪到微表情）
+- 剧本："开心" → 推断："嘴角上扬呈弧形，眼角出现细纹，眉毛自然舒展，眼神明亮且有神"
+- 剧本："愤怒" → 推断："眉毛紧锁下垂，双眼圆睁，眼球微凸，嘴角向下撇，下颚肌肉紧绷"
+- 剧本："紧张" → 推断："眼神游移不定，喉结上下滚动，额角渗出细密汗珠，下唇被咬出印痕"
+
+### 姿态推断（从情感到肢体语言）
+- 剧本："自信" → 推断："脊背挺直如箭，肩膀自然下沉打开，双手自然垂落或抱在胸前，下巴微微抬起"
+- 剧本："害怕" → 推断："肩膀内扣前倾，双臂交叉护在胸前，重心后移，脚尖朝向出口方向"
+- 剧本："疲惫" → 推断："脊柱微曲，肩膀沉重下垂，头颅低垂，双手无力地垂在身侧"
+
+### 位置推断（从关系到空间）
+- 剧本：两个人对峙 → 推断："左侧人物占据画面左侧三分之一处，身体微微右转；右侧人物占据右侧三分之一处，身体微微左转；两人之间留出三分之一的空间作为张力区域"
+- 剧本：亲密对话 → 推断："两人距离不超过半米，身体微微前倾形成对话弧线，视线平直相交，占据画面中央"
+
+## 第三部分：Prompt生成规范
+
+### Prompt结构（七层递进）
+
+**第1层：强制角色约束（CRITICAL - 绝不能错）**
+格式：\`[CHARACTER DETAILS MUST MATCH: 角色1, species, gender, age, ethnicity, appearance, outfit, 位置; 角色2, species, gender, age, ethnicity, appearance, outfit, 位置]\`
+- 物种必须准确：human/animal（严禁混淆）
+- 性别必须准确：male/female
+- 年龄必须合理：child/teenager/young adult/middle-aged/elderly
+- 外貌特征必须完整体现
+- 服装细节必须准确
+- 位置必须明确（on the left/right/center, foreground/background）
+
+**第2层：核心动作描述（动态且具体）**
+- 使用具体视觉动词：fingers trembling, body leaning forward, eyes widening, etc.
+- 描述动作的强度和速度：slowly reaching, quickly grasping, firmly holding
+- 描述动作的影响：shadows cast by movement, liquid rippling, fabric wrinkling
+
+**第3层：面部表情细节（微表情）**
+- 眼睛状态：pupil dilation, eyelid position, gaze direction, tear formation
+- 嘴巴状态：lip position, smile/frown curve, teeth visibility, muscle tension
+- 眉毛状态：position, furrowing, raising
+- 脸部肌肉：tension lines, shadows formed by expression
+
+**第4层：姿态与肢体语言**
+- 脊椎状态：straight/slumped/curved
+- 肩膀状态：raised/relaxed/tensed/rounded
+- 手臂状态：position, hand shape, muscle tension
+- 手部细节：finger curling, fist clenching, palm orientation
+- 腿部状态：stance width, weight distribution, knee position
+- 整体动态：leaning forward/backward, turning, crouching
+
+**第5层：环境与道具叙事**
+- 环境细节：location features, time of day, weather, texture, color palette
+- 道具细节：specific objects, their condition, position, lighting effects
+- 光影叙事：light direction, intensity, color, shadow placement, dramatic contrast
+- 色彩叙事：color temperature, saturation, contrast, color symbolism
+
+**第6层：情感氛围强化**
+- 氛围词汇：tense, melancholic, joyful, menacing, serene, etc.
+- 氛围视觉化：通过光影、色彩、构图体现
+- 戏剧张力：通过对比、冲突、矛盾体现
+
+**第7层：电影质感词汇**
+- 光影：cinematic lighting, rim light, dramatic shadows, chiaroscuro, volumetric lighting
+- 构图：rule of thirds, golden ratio, leading lines, depth of field
+- 质感：film grain, lens flare, vignette, color grading
+- 镜头：wide angle, telephoto, macro, dolly shot, tracking shot
+
+### 人物互动描述规范
+
+**双人场景：**
+- 描述两人的空间关系（距离、角度、站位）
+- 描述两人的视觉互动（对视、凝视、回避、瞥视）
+- 描述两人的肢体关系（接触、即将接触、保持距离）
+- 描述两人的情感互动（谁占主导、谁处于弱势、平等对视）
+
+**多人场景：**
+- 明确每个人的位置和站位
+- 描述视觉焦点（谁在中心、谁在边缘）
+- 描述人群动态（整体状态、个体差异）
+- 描述空间层次（前景、中景、背景的人物分布）
+
+## 剧本详细分析
+
+${storyboard.scenes.map((scene: any, index: number) => {
+  const characters = sceneCharactersMap[scene.sceneNumber] || [];
+  return `
+【场景${scene.sceneNumber}】
+- 场景类型：${scene.shotType}
+- 角度：${scene.cameraAngle}
+- 运镜：${scene.cameraMovement}
+- 构图：${scene.composition}
+- 人物位置：${scene.characterPosition}
+- 光线：${scene.lighting}
+- 色温：${scene.colorTemperature}
+- 氛围：${scene.mood}
+- 出场人物：${characters.length > 0 ? characters.map((c: any) => c.name).join(', ') : '无'}
+${characters.length > 0 ? characters.map((c: any) => `  - ${c.name}：
+    物种：${c.appearance.includes('猫') || c.appearance.includes('狗') || c.appearance.includes('鸟') || c.name.includes('猫') || c.name.includes('狗') || c.name.includes('鸟') ? 'animal' : 'human'}
+    性别：${c.gender}
+    种族：${c.ethnicity}
+    年龄：${c.appearance.includes('幼') || c.appearance.includes('小') ? 'young' : c.appearance.includes('老') ? 'old' : 'adult'}
+    外貌特征：${c.appearance}
+    服装细节：${c.outfit}
+    表情状态：${c.expression}
+    独特标识：${c.appearance}` ).join('\n') : ''}
+- 原始提示词：${scene.prompt}
+
+【场景${scene.sceneNumber}深度分析】
+- 核心情感：从mood和action推断（如：紧张、悲伤、愤怒、希望、恐惧、喜悦）
+- 戏剧目的：这个场景要达成什么（如：制造冲突、推进剧情、建立关系、释放情绪）
+- 视觉隐喻：环境、光影、色彩如何体现情感
+- 戏剧性时刻：最具张力的瞬间是什么
+- 人物状态推断：
+${characters.map((c: any) => `  - ${c.name}：
+    动作推断：从action推断具体动作细节（视觉动词+具体描述）
+    表情推断：从mood和dialogue推断微表情（眼睛、嘴巴、眉毛状态）
+    姿态推断：从情感推断肢体语言（脊背、肩膀、手臂、手部状态）
+    位置安排：在画面中的具体位置和空间关系
+`).join('\n')}
+`;
+}).join('\n')}
+
+## 返回格式（严格JSON）
+
+\`\`\`json
+{
+  "enhancedPrompts": [
+    {
+      "sceneNumber": 1,
+      "enhancedPrompt": "完整的英文生图提示词，严格遵循七层结构：[CHARACTER DETAILS MUST MATCH: 角色完整信息] + 核心动作描述 + 面部表情细节 + 姿态与肢体语言 + 环境与道具叙事 + 情感氛围强化 + 电影质感词汇，确保：1.角色100%符合设定（物种、性别、年龄、外貌、服装） 2.每个细节都有具体视觉描述 3.情感通过光影色彩构图准确传达 4.人物动态、表情、姿态完美契合剧情 5.画面细节丰富、戏剧性强、令人惊艳"
+    }
+  ]
+}
+\`\`\`
+
+## 优化要求（必须严格遵守 - 违反即失败）
+
+**第一优先级：角色一致性（CRITICAL - 不可妥协）**
+1. **物种必须100%准确**：动物角色生成动物形态，人类角色生成人类形态
+2. **性别必须100%准确**：male=男性，female=女性，绝不允许混淆
+3. **年龄必须合理**：child=儿童，elderly=老人，外貌与年龄匹配
+4. **外貌特征必须100%体现**：剧本描述的所有特征必须出现在画面中
+
+**第二优先级：剧本细节与情感内核**
+5. **情感内核四问必须回答**：每个场景都要先回答核心情感、戏剧目的、视觉隐喻、戏剧性时刻
+6. **动作推断必须具体**：从action推断动态细节，使用具体视觉动词（如"手指颤抖"而非"紧张的动作"）
+7. **表情推断必须精确**：从mood和dialogue推断微表情（眼睛、嘴巴、眉毛、脸部肌肉）
+8. **姿态推断必须生动**：从情感推断肢体语言（脊背、肩膀、手臂、手部、腿部状态）
+9. **位置推断必须明确**：明确描述每个角色的空间位置和相互关系
+10. **环境叙事必须有目的**：环境不是背景，要主动传达情感（时间、地点、天气、色彩、光影）
+
+**第三优先级：视觉表达**
+11. **Prompt必须遵循七层结构**：角色约束→动作→表情→姿态→环境→情感→电影质感
+12. **每个出场人物必须有完整描述**：包含species, gender, age, ethnicity, appearance, outfit, position
+13. **人物互动必须具体**：双人场景描述空间关系、视觉互动、肢体关系、情感互动
+14. **动态细节必须生动**：描述动作的强度、速度、影响（不是静态描述）
+15. **光影色彩必须叙事**：光线方向、强度、色温服务于情感，色彩选择传达隐喻
+16. **电影质感必须专业**：使用cinematic lighting, rim light, depth of field等专业词汇
+17. **细节丰富性**：每个prompt都要有8-10个不同的视觉细节，确保画面丰富
+
+**第四优先级：从分镜信息中提取并强化**
+18. **利用分镜的景别信息**：shotType决定画面重点（特写强化表情，全景强化环境）
+19. **利用分镜的角度信息**：cameraAngle暗示权力关系（低角度仰视=强大，高角度俯视=弱小）
+20. **利用分镜的运镜信息**：cameraMovement体现动感（Dolly In=聚焦，Handheld=不安）
+21. **利用分镜的构图信息**：composition引导视线（三分法=动态平衡，对称=稳定庄重）
+22. **利用分镜的光线信息**：lighting直接影响氛围（Chiaroscuro=强烈对比，Golden Hour=温暖）
+
+## 自检清单（每个prompt必须通过）
+
+生成每个prompt前，必须逐项检查：
+
+**角色一致性检查：**
+- [ ] 所有角色的物种是否准确？（猫就是猫，不是人）
+- [ ] 所有角色的性别是否准确？（male/female绝不混淆）
+- [ ] 所有角色的年龄是否合理？（child就是儿童的样子）
+- [ ] 所有角色的外貌特征是否完整体现？
+
+**情感内核检查：**
+- [ ] 是否回答了核心情感四问？
+- [ ] 戏剧目的是否清晰？（这个场景要达成什么）
+- [ ] 视觉隐喻是否准确？（环境、光影、色彩如何体现情感）
+- [ ] 戏剧性时刻是否突出？（最具张力的瞬间是什么）
+
+**视觉细节检查：**
+- [ ] 人物动作是否具体动态？（使用具体视觉动词，不是笼统描述）
+- [ ] 人物表情是否精确详细？（眼睛、嘴巴、眉毛、脸部肌肉状态）
+- [ ] 人物姿态是否生动？（脊背、肩膀、手臂、手部、腿部状态）
+- [ ] 人物位置是否明确？（空间关系、构图位置）
+- [ ] 环境细节是否叙事？（时间、地点、天气、道具如何服务于情感）
+- [ ] 光影色彩是否准确？（服务于情感基调，传达视觉隐喻）
+
+**多人物场景检查：**
+- [ ] 每个人物是否有完整描述？（species, gender, age, ethnicity, appearance, outfit, position）
+- [ ] 人物互动是否具体？（空间关系、视觉互动、肢体关系、情感互动）
+- [ ] 视觉焦点是否明确？（谁在中心、谁在边缘、视线如何引导）
+
+**电影质感检查：**
+- [ ] 是否使用了专业摄影词汇？（cinematic lighting, rim light, depth of field等）
+- [ ] 光影是否戏剧化？（对比度、光源方向、阴影设计）
+- [ ] 色彩是否有情感？（色温、饱和度、对比度、象征意义）
+- [ ] 构图是否有目的？（引导视线、突出重点、营造氛围）
+
+**Prompt结构检查：**
+- [ ] 是否遵循七层结构？（角色约束→动作→表情→姿态→环境→情感→电影质感）
+- [ ] 开头是否有[CHARACTER DETAILS MUST MATCH: xxx]强制约束？
+- [ ] 每个部分是否有足够的细节？（至少8-10个不同的视觉细节）
+
+请为每个场景生成深度理解、细节丰富、戏剧性强、角色100%准确的prompt，让画面令人惊叹！`;
+
+    // 调用LLM生成prompt（基于深度分析）
+    console.log('步骤2：基于深度分析生成prompt...');
+    
+    const promptGenerationMessages = [
+      { role: 'system' as const, content: '你是专业的电影美术指导，擅长将剧本理解转化为精准的视觉prompt。' },
+      { role: 'user' as const, content: promptGenerationPrompt },
+    ];
+
+    let promptGenerationResponse: any;
+    try {
+      promptGenerationResponse = await llmClient.invoke(promptGenerationMessages, {
+        model: 'doubao-seed-1-6-flash-250615',
+        temperature: 0.3
+      });
+
+      console.log('Prompt生成完成');
+      console.log('生成结果:', promptGenerationResponse.content);
+
+      // 提取生成结果JSON
+      let promptJsonContent = promptGenerationResponse.content.trim();
+      promptJsonContent = promptJsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+      const firstBraceIndex = promptJsonContent.indexOf('{');
+      if (firstBraceIndex === -1) {
+        console.warn('Prompt生成解析失败：未找到JSON起始标记');
+        throw new Error('无法解析Prompt生成结果：未找到JSON起始标记');
+      }
+
+      let braceCount = 0;
+      let jsonString = '';
+      for (let i = firstBraceIndex; i < promptJsonContent.length; i++) {
+        const char = promptJsonContent[i];
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+        jsonString += char;
+        if (braceCount === 0) break;
+      }
+
+      const promptData = JSON.parse(jsonString);
+      const enhancedPromptMap: Record<number, string> = {};
+      promptData.prompts.forEach((item: any) => {
+        enhancedPromptMap[item.sceneNumber] = item.prompt;
+      });
+
+      console.log(`已生成 ${Object.keys(enhancedPromptMap).length} 个场景的prompt`);
+
+      // 将生成的prompt合并到storyboard中
+      storyboard.scenes.forEach((scene: any) => {
+        if (enhancedPromptMap[scene.sceneNumber]) {
+          scene.originalPrompt = scene.prompt;
+          scene.prompt = enhancedPromptMap[scene.sceneNumber];
+          console.log(`场景${scene.sceneNumber} prompt已更新`);
+        }
+      });
+
+    } catch (error) {
+      console.warn('Prompt生成失败，使用原始prompt:', error);
+      // 继续使用原始prompt
+    }
 
     // 根据模式选择分辨率
     const imageSize = fastMode ? '512x912' : '720x1280';
@@ -545,6 +847,7 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       });
     }
 
+    // 辅助函数：根据场景获取应该使用的人物参考图
     const getSceneReferenceImages = (sceneNumber: number): string[] => {
       if (!sceneCharacterMapping) {
         // 如果没有映射，返回所有人物图（向后兼容）
