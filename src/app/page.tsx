@@ -127,28 +127,27 @@ export default function Home() {
   const [videoPrompts, setVideoPrompts] = useState<VideoPrompts | null>(null);
   const [selectedPromptScene, setSelectedPromptScene] = useState<number | null>(null);
   const [fastMode, setFastMode] = useState(false); // 快速预览模式
-  const [stylePreviewImages, setStylePreviewImages] = useState<Record<string, string>>({}); // 画风预览图片映射
-  const [generatingPreviews, setGeneratingPreviews] = useState(false); // 是否正在生成预览
 
+  // 画风定义（包含预览图片路径）
   const artStyles = [
-    { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewColor: 'from-gray-700 to-gray-900' },
-    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewColor: 'from-pink-400 to-purple-500' },
-    { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', previewColor: 'from-blue-400 to-cyan-400' },
-    { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', previewColor: 'from-gray-600 to-gray-800' },
-    { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', previewColor: 'from-amber-200 to-orange-300' },
-    { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', previewColor: 'from-yellow-500 to-orange-600' },
-    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewColor: 'from-green-400 to-emerald-500' },
-    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewColor: 'from-fuchsia-500 to-cyan-500' },
-    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewColor: 'from-green-300 to-teal-400' },
-    { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', previewColor: 'from-slate-600 to-slate-800' },
-    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewColor: 'from-indigo-500 to-purple-600' },
-    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewColor: 'from-amber-600 to-yellow-700' },
-    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewColor: 'from-gray-800 to-purple-900' },
-    { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', previewColor: 'from-red-400 to-pink-500' },
-    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewColor: 'from-cyan-400 to-blue-500' },
-    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewColor: 'from-orange-400 to-red-400' },
-    { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', previewColor: 'from-yellow-600 to-amber-700' },
-    { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', previewColor: 'from-pink-500 to-violet-600' },
+    { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewUrl: '/style-previews/写实风格.jpg' },
+    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewUrl: '/style-previews/卡通风格.jpg' },
+    { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', previewUrl: '/style-previews/动漫风格.jpg' },
+    { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', previewUrl: '/style-previews/漫画风格.jpg' },
+    { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', previewUrl: '/style-previews/水彩风格.jpg' },
+    { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', previewUrl: '/style-previews/油画风格.jpg' },
+    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewUrl: '/style-previews/像素风格.jpg' },
+    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewUrl: '/style-previews/赛博朋克.jpg' },
+    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewUrl: '/style-previews/吉卜力风格.jpg' },
+    { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', previewUrl: '/style-previews/水墨风格.jpg' },
+    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewUrl: '/style-previews/赛璐璐风格.jpg' },
+    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewUrl: '/style-previews/蒸汽朋克.jpg' },
+    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewUrl: '/style-previews/暗黑哥特.jpg' },
+    { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', previewUrl: '/style-previews/浮世绘风格.jpg' },
+    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewUrl: '/style-previews/低多边形.jpg' },
+    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewUrl: '/style-previews/黏土动画.jpg' },
+    { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', previewUrl: '/style-previews/复古油画.jpg' },
+    { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', previewUrl: '/style-previews/霓虹艺术.jpg' },
   ];
 
   const [artStyleStrength, setArtStyleStrength] = useState(80); // 0-100, 默认80%
@@ -161,53 +160,6 @@ export default function Home() {
       setLoadingProgress(progress);
     } else {
       setLoadingProgress({ current: 0, total: 0 });
-    }
-  };
-
-  // 检查画风预览图片
-  const checkStylePreviews = async () => {
-    try {
-      const response = await fetch('/api/style-previews/generate');
-      const data = await response.json();
-
-      if (data.hasPreviews) {
-        const previewMap: Record<string, string> = {};
-        data.styles.forEach((style: any) => {
-          previewMap[style.style] = style.url;
-        });
-        setStylePreviewImages(previewMap);
-      }
-    } catch (error) {
-      console.error('检查画风预览失败:', error);
-    }
-  };
-
-  // 生成画风预览图片
-  const generateStylePreviews = async () => {
-    setGeneratingPreviews(true);
-    try {
-      const response = await fetch('/api/style-previews/generate', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const previewMap: Record<string, string> = {};
-        data.results.forEach((result: any) => {
-          if (result.success) {
-            previewMap[result.style] = result.url;
-          }
-        });
-        setStylePreviewImages(previewMap);
-        alert(`成功生成 ${data.results.filter((r: any) => r.success).length} / ${data.results.length} 张预览图`);
-      } else {
-        throw new Error(data.error || '生成失败');
-      }
-    } catch (error) {
-      alert('生成预览图片失败: ' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setGeneratingPreviews(false);
     }
   };
 
@@ -571,11 +523,6 @@ export default function Home() {
     return steps.indexOf(currentStep);
   };
 
-  // 在组件加载时检查画风预览图片
-  useEffect(() => {
-    checkStylePreviews();
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 头部 */}
@@ -700,20 +647,9 @@ export default function Home() {
 
             {/* 画风选择 */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <label className="font-medium text-gray-700 dark:text-gray-300">
-                  选择画风
-                </label>
-                {Object.keys(stylePreviewImages).length === 0 && (
-                  <button
-                    onClick={generateStylePreviews}
-                    disabled={generatingPreviews}
-                    className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {generatingPreviews ? '生成中...' : '生成预览图'}
-                  </button>
-                )}
-              </div>
+              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+                选择画风
+              </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {artStyles.map((style) => (
                   <button
@@ -725,21 +661,15 @@ export default function Home() {
                         : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
                     }`}
                   >
-                    {/* 预览图片或渐变色块 */}
-                    {stylePreviewImages[style.name] ? (
-                      <div className="aspect-square relative overflow-hidden">
-                        <img
-                          src={stylePreviewImages[style.name]}
-                          alt={style.name}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      </div>
-                    ) : (
-                      <div className={`aspect-square bg-gradient-to-br ${style.previewColor} transition-transform group-hover:scale-105`}>
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      </div>
-                    )}
+                    {/* 预览图片 */}
+                    <div className="aspect-square relative overflow-hidden">
+                      <img
+                        src={style.previewUrl}
+                        alt={style.name}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    </div>
 
                     {/* 画风名称和描述 */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
@@ -881,7 +811,13 @@ export default function Home() {
             {/* 当前选择的画风显示 */}
             <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex items-center gap-4">
-                <div className={`h-16 w-16 rounded-lg bg-gradient-to-br ${artStyles.find(s => s.name === selectedStyle)?.previewColor || 'from-gray-700 to-gray-900'}`} />
+                <div className="h-16 w-16 rounded-lg overflow-hidden">
+                  <img
+                    src={artStyles.find(s => s.name === selectedStyle)?.previewUrl || ''}
+                    alt={selectedStyle}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">当前画风</div>
                   <div className="text-lg font-bold text-gray-900 dark:text-white">{selectedStyle}</div>
