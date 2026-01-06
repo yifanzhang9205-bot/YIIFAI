@@ -93,6 +93,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 步骤1.5：分析每个角色在剧本中的出场场景和形象约束
+    const characterSceneAnalysis = allCharacters.map(charName => {
+      const charScenes = script.scenes.filter((s: any) =>
+        s.characters && s.characters.includes(charName)
+      );
+
+      return {
+        name: charName,
+        scenes: charScenes.map(s => ({
+          sceneNumber: s.sceneNumber,
+          location: s.location,
+          timeOfDay: s.timeOfDay,
+          mood: s.mood,
+          action: s.action,
+          emotionalBeat: s.emotionalBeat,
+          visualHook: s.visualHook,
+        })),
+        sceneCount: charScenes.length,
+      };
+    });
+
     // 步骤2：分析人物关系和统一设定
     const relationshipPrompt = `你是一个专业的人物关系分析师。
 你的任务是根据剧本内容，分析人物之间的关系，并确定统一的种族/族裔设定。
@@ -137,16 +158,26 @@ export async function POST(request: NextRequest) {
 画风选择：${artStyle}
 对应英文关键词：${currentArtStyleKeywords}
 
+角色在剧本中的出场场景分析：
+${characterSceneAnalysis.map(analysis => `
+【${analysis.name}】
+- 出现场景数：${analysis.sceneCount}
+- 场景详情：
+${analysis.scenes.map(s => `  场景${s.sceneNumber}：${s.location}（${s.timeOfDay}），动作：${s.action}，情感：${s.emotionalBeat}，视觉钩子：${s.visualHook}`).join('\n')}
+`).join('\n')}
+
 重要提示：
 - 在生成每个人物的 prompt 时，**必须**包含画风关键词："${currentArtStyleKeywords}"
 - 画风关键词是强制性的，不能省略
 - prompt结构应为：性别关键词 + 画风关键词 + 种族关键词 + 个人特征 + 家族特征
+- 人物设计必须基于剧本场景细节（如：古代战士需要盔甲，现代学生需要校服等）
 
 请仔细分析人物关系，确保：
 1. 种族和血缘关系的一致性
 2. 性别识别准确（父亲/儿子=男性，母亲/女儿=女性）
 3. prompt中必须包含明确的性别关键词
 4. prompt中必须包含画风关键词：${currentArtStyleKeywords}
+5. 人物设计要参考剧本中的场景约束（服装、道具、环境）
 `;
 
     const relationshipMessages = [

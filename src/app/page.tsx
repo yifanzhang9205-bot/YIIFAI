@@ -121,6 +121,7 @@ export default function Home() {
   const [scriptEdit, setScriptEdit] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('写实风格');
   const [storyboard, setStoryboard] = useState<StoryboardScript | null>(null);
+  const [sceneCharacterMapping, setSceneCharacterMapping] = useState<any[]>([]); // 场景-人物映射
   const [characterDesign, setCharacterDesign] = useState<CharacterDesign | null>(null);
   const [keyframes, setKeyframes] = useState<KeyframeScene[] | null>(null);
   const [videoPrompts, setVideoPrompts] = useState<VideoPrompts | null>(null);
@@ -256,6 +257,7 @@ export default function Home() {
 
       if (data.success) {
         setStoryboard(data.storyboard);
+        setSceneCharacterMapping(data.sceneCharacterMapping || []); // 保存场景-人物映射
         setCurrentStep('storyboard');
       } else {
         throw new Error(data.error || '生成分镜失败');
@@ -364,6 +366,8 @@ export default function Home() {
         body: JSON.stringify({
           storyboard,
           characterImages: characterDesign.characterImages,
+          characterDesign,
+          sceneCharacterMapping,
           fastMode,
         }),
       });

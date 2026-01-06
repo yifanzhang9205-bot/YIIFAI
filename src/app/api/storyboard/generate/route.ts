@@ -277,9 +277,25 @@ ${scriptInfo}
     // 确保artStyle字段正确
     storyboard.artStyle = artStyle;
 
+    // 建立场景-人物映射关系
+    const sceneCharacterMapping = storyboard.scenes.map(scene => {
+      // 从剧本中提取该场景的人物信息
+      const scriptScene = script.scenes.find((s: any) => s.sceneNumber === scene.sceneNumber);
+      const charactersInScene = scriptScene?.characters || [];
+
+      return {
+        sceneNumber: scene.sceneNumber,
+        characters: charactersInScene.map((charName: string) => ({
+          name: charName,
+          role: 'character', // 默认角色类型，后续可以根据剧本细化
+        })),
+      };
+    });
+
     return NextResponse.json({
       success: true,
       storyboard,
+      sceneCharacterMapping, // 新增：场景-人物映射
     });
 
   } catch (error) {
