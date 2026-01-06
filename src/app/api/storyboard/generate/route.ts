@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 
+// 修复常见的LLM JSON格式问题
+function fixLLMJSON(jsonString: string): string {
+  let fixed = jsonString;
+
+  // 修复：属性名后缺少冒号
+  // 例如："title" "测试" -> "title": "测试"
+  fixed = fixed.replace(/"([^"]+)"\s+"([^"]+)"/g, (match, p1, p2, offset) => {
+    const prefix = fixed.substring(0, offset);
+    if (prefix.endsWith(':') || prefix.endsWith('{') || prefix.endsWith(',')) {
+      return `"${p1}": "${p2}"`;
+    }
+    if (prefix.endsWith('[') || prefix.endsWith(',')) {
+      return match;
+    }
+    return match;
+  });
+
+  // 修复逗号位置问题
+  fixed = fixed.replace(/,\s*}/g, '}');
+  fixed = fixed.replace(/,\s*]/g, ']');
+
+  return fixed;
+}
+
 interface StoryboardRequest {
   script: any; // MovieScript
   artStyle: string; // 画风选择
@@ -198,20 +222,41 @@ ${scriptInfo}
       temperature: 0.3
     });
 
+    console.log('LLM原始返回内容:', response.content);
+
     // 提取JSON - 移除markdown标记
     let jsonContent = response.content.trim();
 
     // 移除可能的markdown代码块标记
     jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
 
+    // 移除可能的前后空白字符
+    jsonContent = jsonContent.trim();
+
+    console.log('处理后的内容:', jsonContent);
+
     // 提取JSON（支持嵌套）
     const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error('LLM返回内容:', response.content);
+      console.error('无法找到JSON内容，LLM返回:', response.content);
       throw new Error('无法解析生成的分镜脚本，返回格式不正确');
     }
 
-    const storyboard: StoryboardScript = JSON.parse(jsonMatch[0]);
+    let jsonStr = jsonMatch[0];
+    console.log('提取的JSON字符串:', jsonStr.substring(0, 200) + '...');
+
+    // 修复常见的JSON格式问题
+    const fixedJson = fixLLMJSON(jsonStr);
+    console.log('修复后的JSON:', fixedJson.substring(0, 200) + '...');
+
+    let storyboard: StoryboardScript;
+    try {
+      storyboard = JSON.parse(fixedJson);
+    } catch (parseError) {
+      console.error('JSON解析失败:', parseError);
+      console.error('尝试解析的内容:', fixedJson);
+      throw new Error(`JSON解析失败: ${parseError instanceof Error ? parseError.message : '未知错误'}`);
+    }
 
     // 自检：确保每个场景的prompt包含画风关键词
     storyboard.scenes.forEach(scene => {
