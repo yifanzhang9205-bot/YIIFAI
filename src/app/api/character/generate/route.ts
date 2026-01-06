@@ -115,70 +115,110 @@ export async function POST(request: NextRequest) {
     });
 
     // 步骤2：分析人物关系和统一设定
-    const relationshipPrompt = `你是一个专业的人物关系分析师。
-你的任务是根据剧本内容，分析人物之间的关系，并确定统一的种族/族裔设定。
+    const relationshipPrompt = `你是一位资深的人物设计师和角色造型师，深谙角色设计心理学和视觉符号学。
+你的任务不是简单地"画出人物"，而是"创造有灵魂的角色"，每一个外貌特征都要服务于角色的性格、故事定位和情感弧光。
 
-关键原则：
-1. **血缘关系必须一致**：父母和孩子必须同一种族
-2. **家族成员要有相似特征**：同一家庭的人要有种族特征相似性
-3. **避免逻辑错误**：不要出现两个外国父母生了中国孩子的情况
-4. **性别必须明确**：每个角色的性别字段必须准确（男/女/male/female）
+## 角色设计思维
 
-请返回JSON格式：
+**1. 外貌即性格（Appearance Reveals Character）**
+- 坚毅的角色：下颌线分明，眼神坚定，姿态挺拔
+- 内向的角色：眼神游移，身体微微含胸，姿态收敛
+- 天真的角色：圆脸，大眼睛，表情开放，姿态自然
+- 复杂的角色：面部有故事感，眼神有层次，表情含蓄
+
+**2. 服装即身份（Costume Defines Role）**
+- 主角：服装有标志性，便于观众识别
+- 反派：服装有威胁性，色彩和设计传达对立
+- 配角：服装简洁，不抢主角风头，但有功能性
+
+**3. 表情即心理（Expression Reflects Psychology）**
+- 默认表情要反映角色的核心性格特征
+- 表情设计要考虑角色在剧情中的状态变化
+- 避免千篇一律的微笑或严肃，要有层次感
+
+**4. 视觉一致性（Visual Consistency）**
+- 种族血缘必须一致（父母-子女、兄弟姐妹）
+- 家族成员要有相似的特征（眼睛、鼻子、脸型等）
+- 同一角色的服装、道具在不同场景中要有统一性
+
+**5. 场景适配性（Scene Adaptation）**
+- 角色设计要符合剧本中的场景需求（古代/现代/未来等）
+- 道具要服务于角色身份和剧情功能
+- 服装要有时代感和环境适应性
+
+## 角色分析维度
+
+对于每个角色，请分析：
+1. **角色定位**：主角/配角/反派/工具人？在故事中的功能是什么？
+2. **性格核心**：最核心的性格特质是什么？（如：勇敢、懦弱、狡诈、真诚等）
+3. **情感弧光**：角色在故事中如何成长或变化？起点状态 → 终点状态
+4. **内心冲突**：角色有什么内在矛盾或困境？
+5. **视觉符号**：用什么视觉元素来强化角色？（如：疤痕、配饰、特殊发型等）
+
+## 返回格式（严格JSON）
+
+\`\`\`json
 {
   "relationships": [
-    {"name": "角色名", "role": "角色类型（主角/配角/等）", "relationship": "与他人的关系（如：父亲、母亲、儿子、朋友等）", "age": "年龄", "gender": "性别（必须明确：男/女）"}
+    {"name": "角色名", "role": "角色类型（主角/反派/配角/等）", "relationship": "与他人关系", "age": "年龄", "gender": "性别（必须明确：男/女）"}
   ],
   "unifiedSetting": {
-    "ethnicity": "统一的种族/族裔（必须具体，如：东亚人、白人、黑人、拉丁裔等，如果有多人混血请明确说明）",
-    "artStyleKeywords": "基于画风${artStyle}的关键词（英文，如：anime style / photorealistic 等）",
-    "familyTraits": "家族成员共同的相貌特征（如：圆脸、高鼻梁、深色眼睛等）"
+    "ethnicity": "统一种族（确保血缘关系一致）",
+    "artStyleKeywords": "画风关键词：${currentArtStyleKeywords}",
+    "familyTraits": "家族共同特征（如：深色眼睛、高鼻梁、圆脸型等，用于强化血缘关系）"
   },
   "characters": [
     {
       "name": "角色名",
-      "role": "角色类型",
+      "role": "角色定位（主角/反派/配角/等）",
       "relationship": "关系描述",
       "ethnicity": "种族",
       "age": "年龄",
       "gender": "性别（必须明确：男/女）",
-      "description": "角色背景和性格",
-      "appearance": "详细外貌描述（必须包含：1.统一的种族特征 2.明确的性别特征）",
-      "outfit": "服装描述",
-      "expression": "常用表情",
-      "prompt": "英文生图提示词（必须包含：1.明确的性别关键词 man/male 或 woman/female 2.统一的种族关键词 3.统一的画风关键词 4.家族共同特征 5.个人独特特征）"
+      "description": "角色背景和性格分析（核心性格特质、情感弧光、内心冲突）",
+      "appearance": "外貌设计（必须包含：1.统一种族特征 2.明确性别特征 3.反映性格的面部特征 4.姿态和体态 5.独特视觉符号）",
+      "outfit": "服装设计（符合角色定位、时代背景、故事需求）",
+      "expression": "默认表情设计（反映角色核心性格和心理状态）",
+      "prompt": "英文生图提示词（结构：性别关键词 + 画风关键词 + 种族关键词 + 性格相关外貌特征 + 服装 + 表情 + 姿态 + 家族特征，必须包含：1.male/man或female/woman 2.${currentArtStyleKeywords} 3.统一种族特征 4.家族共同特征）"
     }
   ]
 }
+\`\`\`
 
-剧本信息：
-标题：${script.title}
+## 剧本分析
+
+【故事概况】
+标题：《${script.title}》
 类型：${script.genre}
-人物列表：${allCharacters.join(', ')}
-画风选择：${artStyle}
-对应英文关键词：${currentArtStyleKeywords}
+核心冲突：${script.logline}
+情感弧线：${script.emotionalArc}
+视觉风格：${script.visualStyle}
 
-角色在剧本中的出场场景分析：
+【角色出场场景分析】
 ${characterSceneAnalysis.map(analysis => `
 【${analysis.name}】
-- 出现场景数：${analysis.sceneCount}
-- 场景详情：
-${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${s.timeOfDay}），动作：${s.action}，情感：${s.emotionalBeat}，视觉钩子：${s.visualHook}`).join('\n')}
-`).join('\n')}
+- 出场频次：${analysis.sceneCount}个场景
+- 场景分布：
+${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${s.timeOfDay}）
+    - 动作：${s.action}
+    - 情绪：${s.mood}
+    - 情感节拍：${s.emotionalBeat}
+    - 视觉钩子：${s.visualHook}`).join('\n')}
+`).join('\n\n')}
 
-重要提示：
-- 在生成每个人物的 prompt 时，**必须**包含画风关键词："${currentArtStyleKeywords}"
-- 画风关键词是强制性的，不能省略
-- prompt结构应为：性别关键词 + 画风关键词 + 种族关键词 + 个人特征 + 家族特征
-- 人物设计必须基于剧本场景细节（如：古代战士需要盔甲，现代学生需要校服等）
+## 创作要求
 
-请仔细分析人物关系，确保：
-1. 种族和血缘关系的一致性
-2. 性别识别准确（父亲/儿子=男性，母亲/女儿=女性）
-3. prompt中必须包含明确的性别关键词
-4. prompt中必须包含画风关键词：${currentArtStyleKeywords}
-5. 人物设计要参考剧本中的场景约束（服装、道具、环境）
-`;
+1. **深度理解角色**：不要只看角色名，要理解角色在故事中的功能和定位
+2. **外貌即性格**：每个面部特征、姿态、表情都要反映角色性格
+3. **视觉叙事**：角色设计要服务于故事的情感和主题
+4. **一致性与独特性并重**：家族成员要有一致性，但每个人要有独特性
+5. **强制包含关键词**：prompt必须包含：
+   - 性别关键词：male/man 或 female/woman
+   - 画风关键词：${currentArtStyleKeywords}
+   - 种族关键词（统一）
+   - 家族特征（统一）
+
+请以专业角色设计师的思维，创造有灵魂、有故事感的角色。`;
 
     const relationshipMessages = [
       { role: 'system' as const, content: '你是专业的人物关系分析师，确保逻辑一致性。' },
