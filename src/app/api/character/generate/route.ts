@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 并发生成所有人物图片
-    const imagePromises = characterPromises.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
+    const imagePromises = characterPrompts.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
       console.log(`生成人物设定图：${character.name}...`);
 
       const imageResponse = await imageClient.generate({
