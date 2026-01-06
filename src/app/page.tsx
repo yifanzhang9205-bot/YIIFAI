@@ -229,12 +229,12 @@ export default function Home() {
   const confirmScript = async () => {
     if (!script) return;
 
-    updateLoading(true, '正在生成分镜脚本（可能需要1-2分钟）...');
+    updateLoading(true, '正在生成分镜脚本（约30-60秒）...');
 
     try {
-      // 创建带超时的fetch - 增加到10分钟
+      // 创建带超时的fetch - 调整为3分钟（优化后应该更快）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 600000); // 10分钟超时
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
 
       const response = await fetch('/api/storyboard/generate', {
         method: 'POST',
