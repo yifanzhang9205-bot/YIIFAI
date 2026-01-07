@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
   ],
   "unifiedSetting": {
     "ethnicity": "统一种族（必须明确：东亚人/白人/黑人/拉丁裔/南亚人，确保血缘关系一致）",
-    "artStyleKeywords": "画风关键词：${currentArtStyleKeywords}",
+    "artStyleKeywords": "画风关键词：currentArtStyleKeywords",
     "familyTraits": "家族共同特征（3-5个，如：深色眼睛、高鼻梁、方形脸型、厚嘴唇，用于强化血缘关系）"
   },
   "characters": [
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
       "appearance": "外貌设计（必须详细描述：1.统一种族特征 2.明确性别特征（如男性特征：宽下巴、粗眉毛；女性特征：柔和脸型、细腻五官） 3.反映性格的5个以上独特面部特征 4.独特发型 5.姿态和体态 6.3个以上独特视觉符号（疤痕、痣、配饰等）",
       "outfit": "服装设计（必须符合角色定位、时代背景、故事需求，包含：颜色、材质、款式、标志性元素）",
       "expression": "默认表情设计（详细描述反映角色核心性格的面部表情，包括眼神、嘴型、眉毛等细节）",
-      "prompt": "英文生图提示词（**必须严格包含以下要素，顺序很重要**）：【性别关键词】${currentArtStyleKeywords} + 【种族关键词】 + 【家族共同特征】 + 【5个以上独特外貌特征】 + 【独特发型】 + 【服装细节】 + 【表情细节】 + 【姿态】。**强制要求**：开头必须是'man, male'或'woman, female'，中间包含画风关键词和种族关键词，结尾包含家族特征。示例：'man, male, ${currentArtStyleKeywords}, East Asian, ${familyTraits}, short black hair, glasses, wearing black jacket, standing confidently, determined expression'"
+      "prompt": "英文生图提示词（**必须严格包含以下要素，顺序很重要**）：【性别关键词】currentArtStyleKeywords + 【种族关键词】 + 【家族共同特征】 + 【5个以上独特外貌特征】 + 【独特发型】 + 【服装细节】 + 【表情细节】 + 【姿态】。**强制要求**：开头必须是'man, male'或'woman, female'，中间包含画风关键词和种族关键词，结尾包含家族特征。示例：'man, male, currentArtStyleKeywords, East Asian, familyTraits, short black hair, glasses, wearing black jacket, standing confidently, determined expression'"
     }
   ]
 }
