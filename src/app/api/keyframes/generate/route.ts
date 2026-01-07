@@ -687,70 +687,85 @@ ${scene.prompt}
       console.warn('剧本分析失败，跳过此步骤:', error);
     }
 
-    // ==================== 第二步：基于分析生成prompt ====================
-    // 基于深度分析结果，生成简化但精准的prompt
+    // ==================== 第二步：基于深度分析生成精准prompt ====================
+    // 让豆包统筹整个流程，从需求到剧本再到分镜，确保一致性
 
-    const promptGenerationPrompt = `你是一位专业的电影美术指导，擅长将剧本理解转化为精准的视觉prompt。
+    console.log('步骤2：基于剧本深度分析生成精准prompt...');
 
-你的核心使命：基于剧本的深度分析，生成每个场景的AI生图prompt。
+    let optimizedPrompts: Record<number, string> = {};
 
-## Prompt生成原则
+    // 【关键】统一步骤之间的理解
+    // 豆包需要统筹：需求 → 剧本 → 分镜 → prompt → 人物 → 关键帧
+    // 确保每个环节都互相理解，保持一致性
 
-**核心原则：prompt要简洁、精准、画面感强**
+    const promptGenerationPrompt = `你是一位专业的电影美术指导和AI生图专家，你的核心使命是：**让生成的图片完美呈现剧本的深度理解**。
 
-不要使用复杂的结构，直接描述画面应该是什么样子。
+## 核心原则：豆包统筹全流程
 
-### Prompt应该包含的元素
+**你的任务**：
+基于剧本的深度分析结果，生成每个场景的AI生图prompt。
+**关键**：让prompt能够完美呈现剧本的情感、氛围、角色状态和视觉想象。
 
-**1. 画面核心（最重要）**
-- 最震撼的瞬间是什么（来自剧本分析）
-- 画面应该呈现什么核心内容
-- 例如："A young man holding a medical diagnosis document, hands trembling, tears streaming down his face"
+**重要提醒**：
+1. 你生成的prompt将被用于XiguAPI（nanobananapro模型）
+2. 每个场景只生成1张关键帧图片
+3. 必须使用参考图（人物设定图）来保持人物一致性
+4. 必须确保画风与人物设定完全一致
 
-**2. 人物细节（必须准确）**
+## Prompt生成指南
+
+### Prompt结构（严格顺序）
+
+\`\`\`
+[画风关键词] + [角色详细信息] + [核心动作和表情] + [环境和光线] + [情感氛围] + [电影质感]
+\`\`\`
+
+**必须包含的元素**：
+
+**1. 画风关键词（开头）**
+- 使用三明治结构确保画风100%一致
+- 格式：CRITICAL ART STYLE: [画风关键词]. STRICT: Must follow this art style 100%.
+
+**2. 角色详细信息（必须准确）**
 - 每个角色的species、gender、age
 - 外貌特征（头发、眼睛、体型等）
-- 服装细节
-- 姿态和动作
-- 表情和眼神
-- 例如："male, Asian, 25 years old, short black hair, wearing a blue hoodie, standing with hunched shoulders, hands clutching a paper, eyes red from crying"
+- 服装细节（颜色、材质、款式）
+- 姿态和动作（明确描述）
+- 表情和眼神（反映情感状态）
+- 位置关系（left/right/center）
 
-**3. 画面想象细节（来自剧本分析）**
+**3. 核心动作和表情（来自剧本分析）**
+- 最震撼的瞬间是什么
+- 角色在做什么
+- 具体的动作细节
+
+**4. 环境和光线（来自剧本分析）**
 - 时间：time of day
 - 地点：location and environment details
-- 光线：lighting direction, intensity, color
-- 色彩：color temperature and palette
+- 光线：lighting direction, intensity, color temperature
 - 构图：shot type, camera angle, character position
 - 道具：key props in the scene
+
+**5. 情感氛围（来自剧本分析）**
+- 主导情感：用1-2个形容词（melancholic, tense, hopeful, menacing, serene, etc.）
+- 情感强度：subtle / obvious / intense / explosive
+- 色彩：color temperature and palette
 - 氛围：overall mood and atmosphere
 
-**4. 情感氛围强化**
-- 使用情感相关的形容词（tense, melancholic, hopeful, menacing, serene, etc.）
-- 通过光影和色彩强化情感
-- 例如："melancholic atmosphere, cold fluorescent lighting, blue color palette, feeling of despair"
-
-**5. 画风关键词（必须包含）**
-- 确保画风一致性
-- 使用画风关键词：${artStyleKeywordsMap[storyboard.artStyle || '写实风格'] || 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic'}
-
-**6. 电影质感词汇**
+**6. 电影质感**
 - cinematic lighting, dramatic shadows, depth of field
 - professional photography quality
+- 8k, ultra detailed
 
-### Prompt的格式（简化版）
+## Prompt示例（完整）
 
-不要使用复杂的结构，直接用自然语言描述画面：
+**场景：深夜医院走廊，小明拿着诊断书哭泣**
 
 \`\`\`
-[人物详细信息] + [核心动作和表情] + [环境和光线] + [情感氛围] + [画风关键词] + [电影质感词汇]
+CRITICAL ART STYLE: photorealistic, hyperrealistic, 8k, ultra detailed, realistic lighting, cinematic, professional photography, sharp focus, depth of field. STRICT: Must follow this art style 100%. [CHARACTER DETAILS MUST MATCH: male, man, 30 years old, East Asian, short black hair, glasses, wearing black jacket, standing in center, hands trembling] [ACTION] holding a medical diagnosis document, tears streaming down his face, shoulders slumped forward in despair [ENVIRONMENT] hospital corridor at night, cold fluorescent overhead lights, harsh shadows on face, blue color palette, blurred corridor walls in background, scattered tissues on floor [MOOD] melancholic and desperate atmosphere, feeling of despair and hopelessness [CINEMATIC] cinematic lighting, dramatic shadows, depth of field, professional photography quality. Ensure final image adheres strictly to 写实风格 art style.
 \`\`\`
 
-例如：
-\`\`\`
-A male Asian 25-year-old with short black hair, wearing a blue hoodie, standing in a hospital corridor at night. His hands are trembling as he holds a medical diagnosis document, tears streaming down his face, shoulders slumped forward in despair. The scene is lit by cold fluorescent overhead lights, creating harsh shadows on his face. Blue color palette, melancholic and desperate atmosphere. Photorealistic, 8k, ultra detailed, realistic lighting, cinematic lighting, dramatic shadows, depth of field.
-\`\`\`
-
-## 剧本分析结果
+## 剧本深度分析结果
 
 ${Object.entries(sceneCharactersMap).map(([sceneNum, characters]: [string, any]) => {
   const analysis = sceneAnalysisMap[parseInt(sceneNum)];
@@ -760,7 +775,7 @@ ${Object.entries(sceneCharactersMap).map(([sceneNum, characters]: [string, any])
   return `
 === 场景${sceneNum} ===
 
-【深度分析结果】
+【剧本深度分析】
 ${analysis ? `
 - 故事摘要：${analysis.storySummary}
 - 情感内核：${analysis.emotionCore.dominantEmotion}（${analysis.intensity}）- ${analysis.emotionCore.source}
@@ -769,17 +784,20 @@ ${analysis ? `
 - 画面想象：${analysis.sceneImagination}
 
 【角色状态】
-${analysis.characterStates.map((cs: any) => `- ${cs.name}：${cs.externalState}，${cs.visualDetails}`).join('\n')}
+${analysis.characterStates.map((cs: any) => `- ${cs.name}：${cs.externalState}，${cs.visualDetails}，${cs.internalState}`).join('\n')}
 ` : `
-[分析结果缺失，使用原始分镜信息]
+[深度分析缺失，使用原始分镜信息]
 - 原始提示词：${scene.prompt}
 - 氛围：${scene.mood}
+- 构图：${scene.composition}
+- 光线：${scene.lighting}
 `}
 
-【角色信息】
-${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.appearance}，${c.outfit}，${c.expression}`).join('\n')}
+【出场角色】
+${characters.map((c: any) => `- ${c.name}：${c.gender}（强制）, ${c.ethnicity}, ${c.appearance}, ${c.outfit}, ${c.expression}`).join('\n')}
 
-【请生成此场景的prompt】
+【请生成此场景的精准prompt】
+注意：必须包含角色详细信息，使用画风关键词的三明治结构，确保与剧本深度分析完全一致。
 `;
 }).join('\n')}
 
@@ -790,15 +808,68 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
   "prompts": [
     {
       "sceneNumber": 1,
-      "prompt": "完整的英文生图prompt，简洁、精准、画面感强，包含：人物详细信息 + 核心动作和表情 + 环境和光线 + 情感氛围 + 画风关键词 + 电影质感词汇"
+      "prompt": "完整的英文生图prompt，严格遵循上述结构和要求，确保：1.画风关键词三明治结构 2.角色详细信息准确 3.与剧本深度分析一致 4.画面感强"
     }
   ]
 }
 \`\`\`
 
-请基于剧本的深度分析，生成每个场景的精准prompt。`;
+请基于剧本的深度分析，生成每个场景的精准prompt。确保prompt能够完美呈现剧本的情感和视觉想象。`;
 
-    // 根据模式选择分辨率
+    // 调用LLM生成优化prompt
+    console.log('  调用LLM生成优化prompt...');
+
+    const promptGenerationMessages = [
+      { role: 'system' as const, content: '你是专业的电影美术指导和AI生图专家，擅长将剧本深度分析转化为精准的视觉prompt。' },
+      { role: 'user' as const, content: promptGenerationPrompt },
+    ];
+
+    try {
+      const promptGenerationResponse = await llmClient.invoke(promptGenerationMessages, {
+        model: 'doubao-seed-1-6-flash-250615',
+        temperature: 0.3
+      });
+
+      console.log('  Prompt生成完成');
+      console.log('  Prompt生成结果:', promptGenerationResponse.content);
+
+      // 提取prompt结果JSON
+      let promptJsonContent = promptGenerationResponse.content.trim();
+      promptJsonContent = promptJsonContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+      const firstBraceIndex = promptJsonContent.indexOf('{');
+      if (firstBraceIndex === -1) {
+        console.warn('Prompt生成解析失败：未找到JSON起始标记');
+        throw new Error('无法解析Prompt生成结果：未找到JSON起始标记');
+      }
+
+      let braceCount = 0;
+      let jsonString = '';
+      for (let i = firstBraceIndex; i < promptJsonContent.length; i++) {
+        const char = promptJsonContent[i];
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+        jsonString += char;
+        if (braceCount === 0) break;
+      }
+
+      const promptData = JSON.parse(jsonString);
+      promptData.prompts.forEach((item: any) => {
+        optimizedPrompts[item.sceneNumber] = item.prompt;
+      });
+
+      console.log(`  已生成 ${Object.keys(optimizedPrompts).length} 个优化prompt`);
+
+    } catch (error) {
+      console.warn('Prompt生成失败，使用原始prompt:', error);
+      // 如果失败，使用原始prompt
+      storyboard.scenes.forEach((scene: any) => {
+        optimizedPrompts[scene.sceneNumber] = scene.prompt;
+      });
+    }
+
+    // ==================== 第三步：生成关键帧图片 ====================
+    // 使用优化后的prompt生成图片，并应用画风强化和角色描述增强
     const imageSize = fastMode ? '512x912' : '720x1280';
     console.log(`开始并发生成 ${storyboard.scenes.length} 个关键帧（尺寸: ${imageSize}）...`);
 
@@ -874,7 +945,8 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       const forcedArtStyleMiddle = ` ART STYLE REINFORCEMENT: ${artStyleKeywords}`;
       const forcedArtStyleSuffix = ` Ensure the final image adheres strictly to the ${artStyleName} art style with ${artStyleKeywords}.`;
 
-      let enhancedPrompt = scene.prompt;
+      // 【关键】使用优化后的prompt（基于剧本深度分析生成）
+      let enhancedPrompt = optimizedPrompts[scene.sceneNumber] || scene.prompt;
 
       // 在prompt的开头添加强制画风关键词
       if (!enhancedPrompt.toLowerCase().includes('critical art style')) {

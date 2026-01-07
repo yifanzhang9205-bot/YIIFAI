@@ -294,6 +294,18 @@ export async function POST(request: NextRequest) {
     const relationshipPrompt = `你是一位获奖的角色设计师和造型师，深谙角色设计心理学、视觉符号学和叙事功能。
 你的核心使命：创造**令人难忘、一眼识别、情感共鸣**的角色，每个角色都必须是独立的个体，有独特的视觉标识。
 
+## 【关键】从剧本中准确提取角色信息
+
+**剧本中的角色名已标注性别**：
+- 注意角色名中已明确标注性别，如："小明（男）"、"小芳（女）"、"母亲（女）"、"父亲（男）"
+- **必须严格使用剧本标注的性别**，不能更改
+- 如果剧本中首次出现角色，会包含外貌描述（在action字段中），必须提取这些外貌特征
+
+**角色出场场景分析**：
+- 观察每个角色在哪些场景出现
+- 分析角色的动作、情感节拍、视觉钩子
+- 理解角色在故事中的定位和功能
+
 ## 角色设计思维（一致性 + 独特性）
 
 **核心原则：每个角色都必须是独特的个体，同时保持血缘关系的视觉一致性**
@@ -342,14 +354,14 @@ export async function POST(request: NextRequest) {
 3. **情感弧光**：起点状态 → 关键转折 → 终点状态，详细描述
 4. **内心冲突**：角色有什么内在矛盾或困境？
 5. **视觉符号**：5个以上独特视觉元素（发型、五官、配饰、服装、体态）
-6. **性别特征**：明确的性别标识，避免模糊不清
+6. **性别特征**：**必须从剧本角色名中提取，保持一致**
 
 ## 返回格式（严格JSON）
 
 \`\`\`json
 {
   "relationships": [
-    {"name": "角色名", "role": "角色类型（主角/反派/配角/动物等）", "relationship": "与他人关系（明确血缘：父子/母女/夫妻/朋友）", "age": "年龄", "gender": "性别（必须明确：男/女）"}
+    {"name": "角色名（保留剧本中的性别标注）", "role": "角色类型（主角/反派/配角/动物等）", "relationship": "与他人关系（明确血缘：父子/母女/夫妻/朋友）", "age": "年龄", "gender": "性别（必须与剧本标注一致：男/女）"}
   ],
   "unifiedSetting": {
     "ethnicity": "统一种族（必须明确：东亚人/白人/黑人/拉丁裔/南亚人，确保血缘关系一致）",
@@ -358,17 +370,17 @@ export async function POST(request: NextRequest) {
   },
   "characters": [
     {
-      "name": "角色名",
+      "name": "角色名（保留剧本中的性别标注）",
       "role": "角色定位（主角/反派/配角/动物/等）",
       "relationship": "关系描述",
       "ethnicity": "种族（必须与统一设定一致）",
       "age": "年龄",
-      "gender": "性别（必须明确：男/女）",
+      "gender": "性别（必须与剧本标注一致：男/女，**不能更改**）",
       "description": "角色背景和性格分析（核心性格特质、情感弧光详细描述、内心冲突、在故事中的功能）",
-      "appearance": "外貌设计（必须详细描述：1.统一种族特征 2.明确性别特征 3.反映性格的5个以上独特面部特征 4.独特发型 5.姿态和体态 6.3个以上独特视觉符号（疤痕、痣、配饰等））",
+      "appearance": "外貌设计（必须详细描述：1.统一种族特征 2.明确性别特征（如男性特征：宽下巴、粗眉毛；女性特征：柔和脸型、细腻五官） 3.反映性格的5个以上独特面部特征 4.独特发型 5.姿态和体态 6.3个以上独特视觉符号（疤痕、痣、配饰等）",
       "outfit": "服装设计（必须符合角色定位、时代背景、故事需求，包含：颜色、材质、款式、标志性元素）",
       "expression": "默认表情设计（详细描述反映角色核心性格的面部表情，包括眼神、嘴型、眉毛等细节）",
-      "prompt": "英文生图提示词（结构：性别关键词 + 画风关键词 + 种族关键词 + 5个以上独特外貌特征 + 独特发型 + 服装细节 + 表情细节 + 姿态 + 家族共同特征 + 视觉符号，必须包含：1.male/man或female/woman 2.${currentArtStyleKeywords} 3.统一种族特征 4.3-5个家族共同特征 5.5个以上个体独特特征）"
+      "prompt": "英文生图提示词（**必须严格包含以下要素，顺序很重要**）：【性别关键词】${currentArtStyleKeywords} + 【种族关键词】 + 【家族共同特征】 + 【5个以上独特外貌特征】 + 【独特发型】 + 【服装细节】 + 【表情细节】 + 【姿态】。**强制要求**：开头必须是'man, male'或'woman, female'，中间包含画风关键词和种族关键词，结尾包含家族特征。示例：'man, male, ${currentArtStyleKeywords}, East Asian, ${familyTraits}, short black hair, glasses, wearing black jacket, standing confidently, determined expression'"
     }
   ]
 }
@@ -438,6 +450,53 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
     const unifiedEthnicity = characterData.unifiedSetting.ethnicity;
     const characters = characterData.characters;
 
+    // 【关键】从剧本角色名中提取性别信息，确保一致性
+    const extractGenderFromName = (charName: string): string => {
+      if (charName.includes('（女）') || charName.includes('(女)') || charName.includes('（女性）') || charName.includes('(女性)')) {
+        return '女';
+      } else if (charName.includes('（男）') || charName.includes('(男)') || charName.includes('（男性）') || charName.includes('(男性)')) {
+        return '男';
+      }
+      // 如果没有标注，从角色名本身判断
+      if (['母亲', '妈妈', '女儿', '姐妹', '妻子'].some(kw => charName.includes(kw))) {
+        return '女';
+      } else if (['父亲', '爸爸', '儿子', '兄弟', '丈夫'].some(kw => charName.includes(kw))) {
+        return '男';
+      }
+      return '';
+    };
+
+    // 检查并修正性别
+    characters.forEach((c: CharacterInfo) => {
+      const scriptGender = extractGenderFromName(c.name);
+      
+      if (scriptGender) {
+        // 如果剧本中有性别标注，强制使用剧本标注
+        if (c.gender !== scriptGender) {
+          console.warn(`角色${c.name}的性别与剧本标注不一致，强制修正为：${scriptGender}`);
+          c.gender = scriptGender;
+        }
+      } else {
+        // 如果剧本中没有标注，检查关系的性别逻辑
+        const gender = c.gender.toLowerCase();
+        const relationship = c.relationship.toLowerCase();
+
+        // 父亲/儿子必须男性
+        if ((relationship.includes('父亲') || relationship.includes('father') || relationship.includes('儿子') || relationship.includes('son')) &&
+            !(gender.includes('男') || gender.includes('male') || gender.includes('man'))) {
+          console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为男性`);
+          c.gender = '男';
+        }
+
+        // 母亲/女儿必须女性
+        if ((relationship.includes('母亲') || relationship.includes('mother') || relationship.includes('女儿') || relationship.includes('daughter')) &&
+            !(gender.includes('女') || gender.includes('female') || gender.includes('woman'))) {
+          console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为女性`);
+          c.gender = '女';
+        }
+      }
+    });
+
     // 检查是否有多个种族
     const ethnicities = new Set(characters.map((c: CharacterInfo) => c.ethnicity));
     if (ethnicities.size > 1) {
@@ -457,26 +516,6 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
         c.prompt = c.prompt.replace(/\b(East Asian|Caucasian|African|Latino|South Asian|mixed race)\b/gi, ethnicityKey);
       });
     }
-
-    // 检查性别逻辑错误
-    characters.forEach((c: CharacterInfo) => {
-      const gender = c.gender.toLowerCase();
-      const relationship = c.relationship.toLowerCase();
-
-      // 父亲/儿子必须男性
-      if ((relationship.includes('父亲') || relationship.includes('father') || relationship.includes('儿子') || relationship.includes('son')) &&
-          !(gender.includes('男') || gender.includes('male') || gender.includes('man'))) {
-        console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为男性`);
-        c.gender = '男';
-      }
-
-      // 母亲/女儿必须女性
-      if ((relationship.includes('母亲') || relationship.includes('mother') || relationship.includes('女儿') || relationship.includes('daughter')) &&
-          !(gender.includes('女') || gender.includes('female') || gender.includes('woman'))) {
-        console.warn(`角色${c.name}关系为${c.relationship}，但性别为${c.gender}，强制修正为女性`);
-        c.gender = '女';
-      }
-    });
 
     // 检查prompt是否包含画风关键词（使用三明治结构强化）
     characters.forEach((c: CharacterInfo) => {
@@ -540,23 +579,39 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
 
         const ethnicityKeyword: string = ethnicityMap[unifiedEthnicity] || 'mixed race';
 
-        // 添加明确的性别关键词
+        // 【关键】强制添加明确的性别关键词（必须放在最前面）
         let genderKeyword = '';
         const gender = character.gender.toLowerCase();
         if (gender.includes('男') || gender.includes('male') || gender.includes('man')) {
-          genderKeyword = 'man, male';
+          genderKeyword = 'man, male, masculine';
         } else if (gender.includes('女') || gender.includes('female') || gender.includes('woman')) {
-          genderKeyword = 'woman, female';
+          genderKeyword = 'woman, female, feminine';
         } else {
-          console.warn(`角色${character.name}性别不明确：${character.gender}，默认使用男性`);
-          genderKeyword = 'man, male';
+          console.error(`角色${character.name}性别不明确：${character.gender}，使用默认性别`);
+          // 如果性别不明确，从角色名中再次提取
+          const extractedGender = extractGenderFromName(character.name);
+          if (extractedGender) {
+            genderKeyword = extractedGender === '男' ? 'man, male, masculine' : 'woman, female, feminine';
+          } else {
+            genderKeyword = 'man, male, masculine'; // 默认使用男性
+          }
         }
 
-        // 确保包含所有一致性要素（使用三明治结构强化画风）
-        const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. STRICT: Must follow this art style 100%. `;
-        const forcedArtStyleSuffix = ` Art style: ${artStyle}. Final image must adhere to ${artStyle} aesthetic.`;
+        // 使用三明治结构强化画风一致性
+        // 前缀：强制画风关键词
+        const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. `;
+        // 中间：性别 + 种族 + 家族特征 + 角色独特特征
+        const corePrompt = `${genderKeyword}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}`;
+        // 后缀：强化画风关键词和角色prompt
+        const forcedArtStyleSuffix = ` Character details: ${character.prompt}. Ensure the final image strictly adheres to the ${artStyle} art style.`;
 
-        const unifiedPrompt = forcedArtStylePrefix + `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}` + forcedArtStyleSuffix;
+        const unifiedPrompt = forcedArtStylePrefix + corePrompt + forcedArtStyleSuffix;
+
+        console.log(`  角色${character.name}的prompt结构：`);
+        console.log(`    性别关键词: ${genderKeyword}`);
+        console.log(`    种族关键词: ${ethnicityKeyword}`);
+        console.log(`    画风关键词: ${currentArtStyleKeywords}`);
+        console.log(`    Prompt长度: ${unifiedPrompt.length}字符`);
 
         return { character, prompt: unifiedPrompt };
       });
