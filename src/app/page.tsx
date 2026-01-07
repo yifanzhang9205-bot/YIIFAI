@@ -185,81 +185,81 @@ export default function Home() {
   // 60+种画风定义（按分类）
   const artStyles = [
     // 写实类
-    { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewUrl: '/style-previews/写实风格.jpg' },
-    { name: '电影质感', keywords: 'cinematic, film grain, dramatic lighting, professional photography, high detail', description: '电影大片', previewUrl: '/style-previews/电影质感.jpg' },
-    { name: '纪录片风格', keywords: 'documentary style, natural lighting, authentic, raw, handheld camera feel', description: '纪录片', previewUrl: '/style-previews/纪录片风格.jpg' },
-    { name: '新闻摄影', keywords: 'photojournalism, candid, authentic, documentary style, natural lighting', description: '新闻纪实', previewUrl: '/style-previews/新闻摄影.jpg' },
-    { name: '商业摄影', keywords: 'commercial photography, high key lighting, clean, polished, professional', description: '商业广告', previewUrl: '/style-previews/商业摄影.jpg' },
+    { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', gradient: 'from-blue-500 to-purple-600' },
+    { name: '电影质感', keywords: 'cinematic, film grain, dramatic lighting, professional photography, high detail', description: '电影大片', gradient: 'from-gray-700 to-gray-900' },
+    { name: '纪录片风格', keywords: 'documentary style, natural lighting, authentic, raw, handheld camera feel', description: '纪录片', gradient: 'from-amber-600 to-amber-800' },
+    { name: '新闻摄影', keywords: 'photojournalism, candid, authentic, documentary style, natural lighting', description: '新闻纪实', gradient: 'from-stone-500 to-stone-700' },
+    { name: '商业摄影', keywords: 'commercial photography, high key lighting, clean, polished, professional', description: '商业广告', gradient: 'from-slate-500 to-slate-700' },
 
     // 动漫/漫画类
-    { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', previewUrl: '/style-previews/动漫风格.jpg' },
-    { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', previewUrl: '/style-previews/漫画风格.jpg' },
-    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewUrl: '/style-previews/赛璐璐风格.jpg' },
-    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewUrl: '/style-previews/吉卜力风格.jpg' },
-    { name: '新海诚风格', keywords: 'makoto shinkai style, anime, beautiful scenery, detailed backgrounds, emotional lighting', description: '新海诚', previewUrl: '/style-previews/新海诚风格.jpg' },
-    { name: '宫崎骏风格', keywords: 'miyazaki hayao style, ghibli, anime, fantasy, hand drawn, magical realism', description: '宫崎骏', previewUrl: '/style-previews/宫崎骏风格.jpg' },
+    { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', gradient: 'from-pink-500 to-rose-600' },
+    { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', gradient: 'from-zinc-600 to-zinc-800' },
+    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', gradient: 'from-violet-500 to-purple-600' },
+    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', gradient: 'from-green-500 to-emerald-600' },
+    { name: '新海诚风格', keywords: 'makoto shinkai style, anime, beautiful scenery, detailed backgrounds, emotional lighting', description: '新海诚', gradient: 'from-sky-400 to-blue-500' },
+    { name: '宫崎骏风格', keywords: 'miyazaki hayao style, ghibli, anime, fantasy, hand drawn, magical realism', description: '宫崎骏', gradient: 'from-lime-500 to-green-600' },
 
     // 卡通/插画类
-    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewUrl: '/style-previews/卡通风格.jpg' },
-    { name: '迪士尼风格', keywords: 'disney animation style, expressive, vibrant colors, clean lines, magical', description: '迪士尼', previewUrl: '/style-previews/迪士尼风格.jpg' },
-    { name: '皮克斯风格', keywords: 'pixar style, 3D animation, expressive, detailed textures, family friendly', description: '皮克斯', previewUrl: '/style-previews/皮克斯风格.jpg' },
-    { name: '儿童绘本', keywords: 'childrens book illustration, whimsical, watercolor, hand drawn, cute, colorful', description: '儿童绘本', previewUrl: '/style-previews/儿童绘本.jpg' },
-    { name: '矢量插画', keywords: 'vector illustration, flat design, clean lines, minimalist, graphic design', description: '矢量插画', previewUrl: '/style-previews/矢量插画.jpg' },
-    { name: '涂鸦风格', keywords: 'graffiti style, street art, urban, bold colors, expressive, edgy', description: '街头涂鸦', previewUrl: '/style-previews/涂鸦风格.jpg' },
+    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', gradient: 'from-yellow-400 to-orange-500' },
+    { name: '迪士尼风格', keywords: 'disney animation style, expressive, vibrant colors, clean lines, magical', description: '迪士尼', gradient: 'from-blue-400 to-indigo-500' },
+    { name: '皮克斯风格', keywords: 'pixar style, 3D animation, expressive, detailed textures, family friendly', description: '皮克斯', gradient: 'from-red-400 to-orange-500' },
+    { name: '儿童绘本', keywords: 'childrens book illustration, whimsical, watercolor, hand drawn, cute, colorful', description: '儿童绘本', gradient: 'from-pink-400 to-rose-500' },
+    { name: '矢量插画', keywords: 'vector illustration, flat design, clean lines, minimalist, graphic design', description: '矢量插画', gradient: 'from-cyan-500 to-teal-600' },
+    { name: '涂鸦风格', keywords: 'graffiti style, street art, urban, bold colors, expressive, edgy', description: '街头涂鸦', gradient: 'from-fuchsia-500 to-pink-600' },
 
     // 艺术绘画类
-    { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', previewUrl: '/style-previews/水彩风格.jpg' },
-    { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', previewUrl: '/style-previews/油画风格.jpg' },
-    { name: '素描风格', keywords: 'pencil sketch, charcoal drawing, detailed line art, traditional art, black and white', description: '素描铅画', previewUrl: '/style-previews/素描风格.jpg' },
-    { name: '粉彩风格', keywords: 'pastel art, soft colors, gentle, dreamy, delicate, muted palette', description: '粉彩柔和', previewUrl: '/style-previews/粉彩风格.jpg' },
-    { name: '版画风格', keywords: 'printmaking, linocut, woodcut, bold lines, limited colors, traditional art', description: '版画艺术', previewUrl: '/style-previews/版画风格.jpg' },
-    { name: '波普艺术', keywords: 'pop art, bold colors, comic book style, halftone, vibrant, andy warhol style', description: '波普艺术', previewUrl: '/style-previews/波普艺术.jpg' },
+    { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', gradient: 'from-indigo-300 to-purple-400' },
+    { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', gradient: 'from-amber-700 to-orange-800' },
+    { name: '素描风格', keywords: 'pencil sketch, charcoal drawing, detailed line art, traditional art, black and white', description: '素描铅画', gradient: 'from-gray-400 to-gray-600' },
+    { name: '粉彩风格', keywords: 'pastel art, soft colors, gentle, dreamy, delicate, muted palette', description: '粉彩柔和', gradient: 'from-pink-300 to-purple-400' },
+    { name: '版画风格', keywords: 'printmaking, linocut, woodcut, bold lines, limited colors, traditional art', description: '版画艺术', gradient: 'from-red-600 to-rose-700' },
+    { name: '波普艺术', keywords: 'pop art, bold colors, comic book style, halftone, vibrant, andy warhol style', description: '波普艺术', gradient: 'from-yellow-500 to-red-500' },
 
     // 传统文化类
-    { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', previewUrl: '/style-previews/水墨风格.jpg' },
-    { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', previewUrl: '/style-previews/浮世绘风格.jpg' },
-    { name: '敦煌壁画', keywords: 'dunhuang mural style, ancient chinese art, vibrant colors, gold leaf, religious art', description: '敦煌壁画', previewUrl: '/style-previews/敦煌壁画.jpg' },
-    { name: '唐卡风格', keywords: 'thangka style, tibetan art, vibrant colors, detailed patterns, religious imagery', description: '唐卡艺术', previewUrl: '/style-previews/唐卡风格.jpg' },
-    { name: '和风', keywords: 'japanese style, traditional, minimal, zen, delicate patterns, soft colors', description: '日式和风', previewUrl: '/style-previews/和风.jpg' },
+    { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', gradient: 'from-gray-600 to-black' },
+    { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', gradient: 'from-red-400 to-orange-500' },
+    { name: '敦煌壁画', keywords: 'dunhuang mural style, ancient chinese art, vibrant colors, gold leaf, religious art', description: '敦煌壁画', gradient: 'from-amber-500 to-yellow-600' },
+    { name: '唐卡风格', keywords: 'thangka style, tibetan art, vibrant colors, detailed patterns, religious imagery', description: '唐卡艺术', gradient: 'from-orange-600 to-red-700' },
+    { name: '和风', keywords: 'japanese style, traditional, minimal, zen, delicate patterns, soft colors', description: '日式和风', gradient: 'from-rose-300 to-pink-400' },
 
     // 特定时期/流派
-    { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', previewUrl: '/style-previews/复古油画.jpg' },
-    { name: '印象派', keywords: 'impressionism, soft light, visible brushstrokes, monet style, dreamy atmosphere', description: '印象派', previewUrl: '/style-previews/印象派.jpg' },
-    { name: '野兽派', keywords: 'fauvism, bold colors, expressive, intense, matisse style', description: '野兽派', previewUrl: '/style-previews/野兽派.jpg' },
-    { name: '超现实主义', keywords: 'surrealism, dreamlike, salvador dali style, bizarre, symbolic', description: '超现实', previewUrl: '/style-previews/超现实主义.jpg' },
+    { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', gradient: 'from-amber-800 to-stone-900' },
+    { name: '印象派', keywords: 'impressionism, soft light, visible brushstrokes, monet style, dreamy atmosphere', description: '印象派', gradient: 'from-sky-300 to-blue-400' },
+    { name: '野兽派', keywords: 'fauvism, bold colors, expressive, intense, matisse style', description: '野兽派', gradient: 'from-green-500 to-lime-500' },
+    { name: '超现实主义', keywords: 'surrealism, dreamlike, salvador dali style, bizarre, symbolic', description: '超现实', gradient: 'from-purple-500 to-indigo-600' },
 
     // 科幻/未来类
-    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewUrl: '/style-previews/赛博朋克.jpg' },
-    { name: '废土风格', keywords: 'wasteland style, post-apocalyptic, rusty, decayed, atmospheric, gritty', description: '废土末世', previewUrl: '/style-previews/废土风格.jpg' },
-    { name: '太空歌剧', keywords: 'space opera, cosmic, interstellar, epic, vast, futuristic', description: '太空歌剧', previewUrl: '/style-previews/太空歌剧.jpg' },
-    { name: '未来都市', keywords: 'futuristic city, skyscrapers, high tech, urban, neon, advanced architecture', description: '未来都市', previewUrl: '/style-previews/未来都市.jpg' },
-    { name: '机甲风格', keywords: 'mecha style, giant robots, mechanical, detailed, high tech, anime', description: '机甲科幻', previewUrl: '/style-previews/机甲风格.jpg' },
+    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', gradient: 'from-cyan-400 to-purple-600' },
+    { name: '废土风格', keywords: 'wasteland style, post-apocalyptic, rusty, decayed, atmospheric, gritty', description: '废土末世', gradient: 'from-stone-600 to-amber-700' },
+    { name: '太空歌剧', keywords: 'space opera, cosmic, interstellar, epic, vast, futuristic', description: '太空歌剧', gradient: 'from-indigo-600 to-purple-800' },
+    { name: '未来都市', keywords: 'futuristic city, skyscrapers, high tech, urban, neon, advanced architecture', description: '未来都市', gradient: 'from-blue-500 to-cyan-600' },
+    { name: '机甲风格', keywords: 'mecha style, giant robots, mechanical, detailed, high tech, anime', description: '机甲科幻', gradient: 'from-slate-600 to-zinc-700' },
 
     // 奇幻/魔法类
-    { name: '奇幻风格', keywords: 'fantasy style, magical, ethereal, mystical, detailed, enchanted', description: '奇幻魔法', previewUrl: '/style-previews/奇幻风格.jpg' },
-    { name: '暗黑奇幻', keywords: 'dark fantasy, gothic horror, atmospheric, dramatic, mysterious', description: '暗黑奇幻', previewUrl: '/style-previews/暗黑奇幻.jpg' },
-    { name: '童话风格', keywords: 'fairy tale, whimsical, enchanted, magical, storybook', description: '童话故事', previewUrl: '/style-previews/童话风格.jpg' },
-    { name: '魔幻现实主义', keywords: 'magical realism, surreal, dreamlike, fantasy elements in realistic setting', description: '魔幻现实', previewUrl: '/style-previews/魔幻现实主义.jpg' },
+    { name: '奇幻风格', keywords: 'fantasy style, magical, ethereal, mystical, detailed, enchanted', description: '奇幻魔法', gradient: 'from-purple-400 to-pink-500' },
+    { name: '暗黑奇幻', keywords: 'dark fantasy, gothic horror, atmospheric, dramatic, mysterious', description: '暗黑奇幻', gradient: 'from-gray-700 to-purple-900' },
+    { name: '童话风格', keywords: 'fairy tale, whimsical, enchanted, magical, storybook', description: '童话故事', gradient: 'from-pink-300 to-purple-400' },
+    { name: '魔幻现实主义', keywords: 'magical realism, surreal, dreamlike, fantasy elements in realistic setting', description: '魔幻现实', gradient: 'from-indigo-400 to-purple-500' },
 
     // 机械/工业类
-    { name: '工业设计', keywords: 'industrial design, sleek, modern, manufactured, clean lines, functional', description: '工业设计', previewUrl: '/style-previews/工业设计.jpg' },
-    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewUrl: '/style-previews/蒸汽朋克.jpg' },
-    { name: '柴油朋克', keywords: 'dieselpunk, 1940s, industrial, gritty, diesel, wartime aesthetic', description: '柴油朋克', previewUrl: '/style-previews/柴油朋克.jpg' },
-    { name: '机械科幻', keywords: 'mechanical sci-fi, detailed machinery, technical, blueprints, intricate', description: '机械科幻', previewUrl: '/style-previews/机械科幻.jpg' },
+    { name: '工业设计', keywords: 'industrial design, sleek, modern, manufactured, clean lines, functional', description: '工业设计', gradient: 'from-gray-500 to-slate-600' },
+    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', gradient: 'from-amber-600 to-orange-700' },
+    { name: '柴油朋克', keywords: 'dieselpunk, 1940s, industrial, gritty, diesel, wartime aesthetic', description: '柴油朋克', gradient: 'from-stone-500 to-zinc-600' },
+    { name: '机械科幻', keywords: 'mechanical sci-fi, detailed machinery, technical, blueprints, intricate', description: '机械科幻', gradient: 'from-slate-600 to-gray-700' },
 
     // 数字/现代类
-    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewUrl: '/style-previews/像素风格.jpg' },
-    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewUrl: '/style-previews/低多边形.jpg' },
-    { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', previewUrl: '/style-previews/霓虹艺术.jpg' },
-    { name: '未来主义', keywords: 'futurism, speed, technology, dynamic, forward-looking', description: '未来主义', previewUrl: '/style-previews/未来主义.jpg' },
-    { name: '极简主义', keywords: 'minimalism, clean, simple, geometric, less is more', description: '极简设计', previewUrl: '/style-previews/极简主义.jpg' },
+    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', gradient: 'from-green-500 to-emerald-600' },
+    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', gradient: 'from-blue-400 to-cyan-500' },
+    { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', gradient: 'from-fuchsia-500 to-purple-600' },
+    { name: '未来主义', keywords: 'futurism, speed, technology, dynamic, forward-looking', description: '未来主义', gradient: 'from-indigo-500 to-blue-600' },
+    { name: '极简主义', keywords: 'minimalism, clean, simple, geometric, less is more', description: '极简设计', gradient: 'from-gray-300 to-gray-500' },
 
     // 其他风格
-    { name: '抽象主义', keywords: 'abstract art, geometric shapes, non-representational, modern art', description: '抽象艺术', previewUrl: '/style-previews/抽象主义.jpg' },
-    { name: '表现主义', keywords: 'expressionism, emotional, distorted, subjective, intense', description: '表现主义', previewUrl: '/style-previews/表现主义.jpg' },
-    { name: '立体主义', keywords: 'cubism, geometric, fragmented, multiple perspectives, picasso style', description: '立体主义', previewUrl: '/style-previews/立体主义.jpg' },
-    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewUrl: '/style-previews/暗黑哥特.jpg' },
-    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewUrl: '/style-previews/黏土动画.jpg' },
+    { name: '抽象主义', keywords: 'abstract art, geometric shapes, non-representational, modern art', description: '抽象艺术', gradient: 'from-violet-500 to-fuchsia-600' },
+    { name: '表现主义', keywords: 'expressionism, emotional, distorted, subjective, intense', description: '表现主义', gradient: 'from-red-500 to-orange-600' },
+    { name: '立体主义', keywords: 'cubism, geometric, fragmented, multiple perspectives, picasso style', description: '立体主义', gradient: 'from-blue-600 to-indigo-700' },
+    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', gradient: 'from-gray-800 to-black' },
+    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', gradient: 'from-orange-400 to-amber-500' },
   ];
 
   const [artStyleStrength, setArtStyleStrength] = useState(80); // 0-100, 默认80%
@@ -805,41 +805,42 @@ export default function Home() {
             </div>
 
             {/* 画风选择 */}
-            <div className="mb-6">
-              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+            <div className="mb-8">
+              <label className="mb-4 block font-semibold text-slate-700 dark:text-slate-300">
                 选择画风
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                 {artStyles.map((style) => (
                   <button
                     key={style.name}
                     onClick={() => setSelectedStyle(style.name)}
-                    className={`group relative rounded-xl border-2 overflow-hidden transition-all ${
+                    className={`group relative rounded-2xl border-2 overflow-hidden transition-all ${
                       selectedStyle === style.name
-                        ? 'border-blue-500 shadow-lg shadow-blue-500/30'
-                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                        ? 'border-blue-500 shadow-xl shadow-blue-500/30 scale-105'
+                        : 'border-slate-200 hover:border-slate-300 hover:scale-105 dark:border-slate-700 dark:hover:border-slate-600'
                     }`}
                   >
-                    {/* 预览图片 */}
-                    <div className="aspect-square relative overflow-hidden">
-                      <img
-                        src={style.previewUrl}
-                        alt={style.name}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    {/* 渐变背景 */}
+                    <div className={`aspect-square relative overflow-hidden bg-gradient-to-br ${style.gradient}`}>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      {/* 装饰图案 */}
+                      <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full bg-white/30 blur-2xl" />
+                        <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 rounded-full bg-white/20 blur-xl" />
+                      </div>
                     </div>
 
                     {/* 画风名称和描述 */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                      <div className="font-semibold text-white text-xs">{style.name}</div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent p-3">
+                      <div className="font-semibold text-white text-sm leading-tight">{style.name}</div>
+                      <div className="text-xs text-white/80 mt-0.5">{style.description}</div>
                     </div>
 
                     {/* 选中标记 */}
                     {selectedStyle === style.name && (
-                      <div className="absolute top-1 right-1 h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                        <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <div className="absolute top-2 right-2 h-7 w-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/30 dark:ring-white/10">
+                        <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                     )}
@@ -982,17 +983,15 @@ export default function Home() {
             {/* 当前选择的画风显示 */}
             <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-lg overflow-hidden">
-                  <img
-                    src={artStyles.find(s => s.name === selectedStyle)?.previewUrl || ''}
-                    alt={selectedStyle}
-                    className="w-full h-full object-cover"
-                  />
+                <div className={`h-16 w-16 rounded-xl bg-gradient-to-br ${artStyles.find(s => s.name === selectedStyle)?.gradient || 'from-gray-500 to-gray-600'} overflow-hidden relative`}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl">🎨</span>
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">当前画风</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{selectedStyle}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{artStyles.find(s => s.name === selectedStyle)?.description}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">当前画风</div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStyle}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">{artStyles.find(s => s.name === selectedStyle)?.description}</div>
                 </div>
               </div>
             </div>
