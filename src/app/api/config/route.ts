@@ -19,7 +19,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = Partial<ConfigStorage> & { action?: 'save' | 'reset' };
+    const body: Partial<ConfigStorage> & { action?: 'save' | 'reset' } = await request.json();
 
     if (body.action === 'reset') {
       // 重置为默认配置

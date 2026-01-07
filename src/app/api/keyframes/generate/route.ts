@@ -673,7 +673,7 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
 
       console.log(`  使用参考图数量: ${sceneReferenceImages.length}`);
 
-      const imagesPerScene = body.imagesPerScene || 4; // 每个场景生成4张图片
+      const imagesPerScene = body.imagesPerScene || 1; // 每个场景生成1张图片
       console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片...`);
 
       // 为每个场景生成多张图片

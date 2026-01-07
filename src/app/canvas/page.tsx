@@ -228,7 +228,7 @@ export default function CanvasPage() {
           storyboard: mockStoryboard, // 直接传递对象，不是字符串
           artStyle: '写实风格',
           characterImages: [],
-          imagesPerScene: 4, // 每个场景生成4张图片
+          imagesPerScene: 1, // 每个场景生成1张图片
         }),
       });
 
