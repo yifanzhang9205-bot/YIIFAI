@@ -208,6 +208,21 @@ export async function POST(request: NextRequest) {
     const imageClient = new ImageGenerationClient(config);
     const llmClient = new LLMClient(config);
 
+    // 读取配置，获取用户选择的图片生成模型
+    let imageModel = 'doubao-seedream-4-5-251128'; // 默认模型
+    try {
+      const configResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/config`);
+      const configData = await configResponse.json();
+      if (configData.imageModel) {
+        imageModel = configData.imageModel;
+        console.log(`使用用户配置的图片生成模型: ${imageModel}`);
+        // 修改client的model属性
+        (imageClient as any).model = imageModel;
+      }
+    } catch (error) {
+      console.warn('读取图片生成模型配置失败，使用默认模型:', error);
+    }
+
     // 步骤1：为每个场景生成优化的关键帧prompt（理解情感和氛围）
     console.log('步骤1：分析场景情感，生成优化prompt...');
 

@@ -6,6 +6,7 @@ interface ConfigStorage {
   customImageEndpoint?: string;
   customImageApiKey?: string;
   useCustomApi?: boolean;
+  imageModel?: string; // 图片生成模型
 }
 
 // 简单的内存存储（生产环境应该使用数据库或环境变量）
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       customImageEndpoint: body.customImageEndpoint,
       customImageApiKey: body.customImageApiKey,
       useCustomApi: body.useCustomApi,
+      imageModel: body.imageModel || 'doubao-seedream-4-5-251128', // 默认模型
     };
 
     return NextResponse.json({

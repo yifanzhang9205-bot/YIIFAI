@@ -139,6 +139,7 @@ export default function Home() {
     customApiKey: '',
     customImageEndpoint: '',
     customImageApiKey: '',
+    imageModel: 'doubao-seedream-4-5-251128', // 默认豆包生图模型
   });
 
   // 加载配置
@@ -1606,6 +1607,24 @@ export default function Home() {
                         placeholder="sk-..."
                         className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        图片生成模型
+                      </label>
+                      <select
+                        value={config.imageModel}
+                        onChange={(e) => setConfig({ ...config, imageModel: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      >
+                        <option value="doubao-seedream-4-5-251128">豆包生图 4.5（最新版，推荐）</option>
+                        <option value="doubao-seedream-4-5">豆包生图 4.5</option>
+                        <option value="doubao-seedream-3-5">豆包生图 3.5</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        选择用于生成图片的AI模型
+                      </p>
                     </div>
                   </div>
                 )}
