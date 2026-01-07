@@ -204,24 +204,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = new Config();
-    const imageClient = new ImageGenerationClient(config);
-    const llmClient = new LLMClient(config);
-
     // 读取配置，获取用户选择的图片生成模型
     let imageModel = 'doubao-seedream-4-5-251128'; // 默认模型
     try {
       const configResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/config`);
       const configData = await configResponse.json();
-      if (configData.imageModel) {
-        imageModel = configData.imageModel;
-        console.log(`使用用户配置的图片生成模型: ${imageModel}`);
-        // 修改client的model属性
-        (imageClient as any).model = imageModel;
+      if (configData.imageModel && configData.imageModel.trim()) {
+        imageModel = configData.imageModel.trim();
+        console.log(`✓ 使用用户配置的图片生成模型: ${imageModel}`);
+      } else {
+        console.log(`⚠️  用户未配置图片生成模型，使用默认模型: ${imageModel}`);
       }
     } catch (error) {
       console.warn('读取图片生成模型配置失败，使用默认模型:', error);
     }
+
+    const config = new Config();
+    const imageClient = new ImageGenerationClient(config);
+    const llmClient = new LLMClient(config);
 
     // 步骤1：为每个场景生成优化的关键帧prompt（理解情感和氛围）
     console.log('步骤1：分析场景情感，生成优化prompt...');
@@ -696,6 +696,9 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       for (let i = 0; i < imagesPerScene; i++) {
         // 为每张图片添加一点变化（可选）
         const variationPrompt = i === 0 ? enhancedPrompt : `${enhancedPrompt}, variation ${i + 1}`;
+
+        // 动态设置模型
+        (imageClient as any).model = imageModel;
 
         const imageResponse = await imageClient.generate({
           prompt: variationPrompt,

@@ -446,17 +446,45 @@ export default function CanvasPage() {
                     <label className="text-gray-300 text-sm block mb-1">
                       图片生成模型
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={config.imageModel}
                       onChange={(e) => setConfig({ ...config, imageModel: e.target.value })}
+                      placeholder="输入模型名称，如：doubao-seedream-4-5-251128"
                       className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="doubao-seedream-4-5-251128">豆包生图 4.5（最新版，推荐）</option>
-                      <option value="doubao-seedream-4-5">豆包生图 4.5</option>
-                      <option value="doubao-seedream-3-5">豆包生图 3.5</option>
-                    </select>
+                    />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-4-5-251128' })}
+                        className="text-xs px-2 py-1 bg-blue-900/50 text-blue-300 rounded hover:bg-blue-900/70 transition-colors"
+                      >
+                        豆包 4.5（推荐）
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-4-5' })}
+                        className="text-xs px-2 py-1 bg-purple-900/50 text-purple-300 rounded hover:bg-purple-900/70 transition-colors"
+                      >
+                        豆包 4.5
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-3-5' })}
+                        className="text-xs px-2 py-1 bg-purple-900/50 text-purple-300 rounded hover:bg-purple-900/70 transition-colors"
+                      >
+                        豆包 3.5
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, imageModel: '' })}
+                        className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded hover:bg-gray-500 transition-colors"
+                      >
+                        清空
+                      </button>
+                    </div>
                     <p className="text-gray-500 text-xs mt-1">
-                      选择用于生成图片的AI模型
+                      点击快捷按钮选择常用模型，或直接输入自定义模型名称
                     </p>
                   </div>
                 </>

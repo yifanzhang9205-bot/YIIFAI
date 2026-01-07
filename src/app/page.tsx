@@ -1613,17 +1613,45 @@ export default function Home() {
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         图片生成模型
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={config.imageModel}
                         onChange={(e) => setConfig({ ...config, imageModel: e.target.value })}
+                        placeholder="输入模型名称，如：doubao-seedream-4-5-251128"
                         className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      >
-                        <option value="doubao-seedream-4-5-251128">豆包生图 4.5（最新版，推荐）</option>
-                        <option value="doubao-seedream-4-5">豆包生图 4.5</option>
-                        <option value="doubao-seedream-3-5">豆包生图 3.5</option>
-                      </select>
+                      />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-4-5-251128' })}
+                          className="text-xs px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                        >
+                          豆包 4.5（推荐）
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-4-5' })}
+                          className="text-xs px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                        >
+                          豆包 4.5
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, imageModel: 'doubao-seedream-3-5' })}
+                          className="text-xs px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                        >
+                          豆包 3.5
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, imageModel: '' })}
+                          className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          清空
+                        </button>
+                      </div>
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        选择用于生成图片的AI模型
+                        点击快捷按钮选择常用模型，或直接输入自定义模型名称
                       </p>
                     </div>
                   </div>
