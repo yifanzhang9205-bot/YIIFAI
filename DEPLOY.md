@@ -195,15 +195,31 @@ sudo certbot --nginx -d your-domain.com
 
 ## 环境变量说明
 
-本项目主要使用 `coze-coding-dev-sdk` 提供的集成服务，大部分配置会自动处理。
+本项目主要使用 `coze-coding-dev-sdk` 提供的集成服务。
 
-### 必需变量（通常无需配置）
-- `NEXT_PUBLIC_BASE_URL`：网站的基础URL，部署后自动设置
+### 必需变量（部署时必须配置）
+
+| 变量名 | 说明 | 如何获取 |
+|--------|------|----------|
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze SDK 身份认证密钥 | 从沙箱环境复制或联系 Coze 平台申请 |
+
+**在 Vercel 中配置步骤：**
+1. 进入项目 → Settings → Environment Variables
+2. 点击 Add New
+3. Name: `COZE_WORKLOAD_IDENTITY_API_KEY`
+4. Value: 复制你的 API Key
+5. Environments: 勾选 Production, Preview, Development
 
 ### 可选变量（根据需要配置）
-- 数据库连接：如果使用外部 PostgreSQL
-- 对象存储：如果使用外部 S3 兼容存储
-- API 密钥：如果使用自定义的图片生成服务
+
+| 变量名 | 说明 |
+|--------|------|
+| `NEXT_PUBLIC_BASE_URL` | 网站的基础URL（如：`https://yiifai.vercel.app`） |
+
+**注意事项：**
+- 开发环境：沙箱会自动注入 `COZE_WORKLOAD_IDENTITY_API_KEY`
+- 生产环境：需要手动配置
+- 当前提供的开发 Key 仅用于测试，生产环境请申请正式 Key
 
 ---
 
