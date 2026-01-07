@@ -142,28 +142,28 @@ interface Keyframes {
 
 // 定义画风关键词映射
 const artStyleKeywordsMap: Record<string, string> = {
-  // 写实类
-  '写实风格': 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic',
-  '电影质感': 'cinematic, film grain, dramatic lighting, professional photography, high detail',
-  '纪录片风格': 'documentary style, natural lighting, authentic, raw, handheld camera feel',
-  '新闻摄影': 'photojournalism, candid, authentic, documentary style, natural lighting',
-  '商业摄影': 'commercial photography, high key lighting, clean, polished, professional',
+  // 写实类（优化适配Nanobanana3）
+  '写实风格': 'photorealistic, hyperrealistic, 8k, ultra detailed, realistic lighting, cinematic, professional photography, sharp focus, depth of field',
+  '电影质感': 'cinematic, film grain, dramatic lighting, professional cinematography, high detail, movie still, anamorphic lens, color graded',
+  '纪录片风格': 'documentary style, natural lighting, authentic, raw, handheld camera, photojournalism, candid, real life, unpolished',
+  '新闻摄影': 'photojournalism, candid, authentic, documentary style, natural lighting, news photography, editorial, reportage style',
+  '商业摄影': 'commercial photography, high key lighting, clean, polished, professional, advertising, product photography, magazine quality',
 
-  // 动漫/漫画类
-  '动漫风格': 'anime style, cel shading, vivid colors, manga, detailed',
-  '漫画风格': 'manga style, comic style, black and white manga, detailed line art, anime',
-  '赛璐璐风格': 'cel shaded, anime, bold outlines, flat colors, graphic novel style',
-  '吉卜力风格': 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical',
-  '新海诚风格': 'makoto shinkai style, anime, beautiful scenery, detailed backgrounds, emotional lighting',
-  '宫崎骏风格': 'miyazaki hayao style, ghibli, anime, fantasy, hand drawn, magical realism',
+  // 动漫/漫画类（优化适配Nanobanana3）
+  '动漫风格': 'anime style, anime art, Japanese animation, vibrant colors, detailed character design, manga aesthetic, cel shading, 2D animation',
+  '漫画风格': 'manga style, Japanese comic style, black and white manga, detailed line art, screentone, comic book style, graphic novel',
+  '赛璐璐风格': 'cel shaded anime, bold outlines, flat colors, simplified shading, animation style, 2D anime aesthetic, cel shading technique',
+  '吉卜力风格': 'Studio Ghibli style, Hayao Miyazaki art, Japanese anime, hand drawn, soft watercolor palette, whimsical, fantasy adventure, detailed background art',
+  '新海诚风格': 'Makoto Shinkai style, beautiful anime scenery, hyper detailed backgrounds, emotional lighting, vibrant colors, atmospheric clouds, lens flare, photorealistic anime',
+  '宫崎骏风格': 'Hayao Miyazaki style, Studio Ghibli, fantasy anime, hand drawn, magical realism, whimsical, soft colors, detailed animation, emotional storytelling',
 
-  // 卡通/插画类
-  '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
-  '迪士尼风格': 'disney animation style, expressive, vibrant colors, clean lines, magical',
-  '皮克斯风格': 'pixar style, 3D animation, expressive, detailed textures, family friendly',
-  '儿童绘本': 'childrens book illustration, whimsical, watercolor, hand drawn, cute, colorful',
-  '矢量插画': 'vector illustration, flat design, clean lines, minimalist, graphic design',
-  '涂鸦风格': 'graffiti style, street art, urban, bold colors, expressive, edgy',
+  // 卡通/插画类（优化适配Nanobanana3）
+  '卡通风格': 'cartoon style, animated cartoon, vibrant colors, clean lines, expressive characters, cartoon network style, 2D animation',
+  '迪士尼风格': 'Disney animation style, Disney art style, expressive characters, vibrant saturated colors, clean lines, magical, polished animation',
+  '皮克斯风格': 'Pixar style, 3D animation, CGI animation, expressive characters, detailed textures, subsurface scattering, family friendly, lighting based shading',
+  '儿童绘本': 'childrens book illustration, picture book art, whimsical, watercolor, hand drawn, cute, colorful, soft pastel colors, childrens book aesthetic',
+  '矢量插画': 'vector illustration, flat design, clean lines, minimalist, geometric, graphic design, vector art, digital illustration',
+  '涂鸦风格': 'street art graffiti, urban art, spray paint style, bold vibrant colors, expressive, edgy, street art aesthetic, mural style',
 
   // 艺术绘画类
   '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
@@ -187,11 +187,11 @@ const artStyleKeywordsMap: Record<string, string> = {
   '超现实主义': 'surrealism, dreamlike, salvador dali style, bizarre, symbolic',
   '包豪斯': 'bauhaus style, geometric, minimalist, functional, modernist design',
 
-  // 科幻/未来类
-  '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing',
-  '科幻未来': 'science fiction, futuristic, high tech, space age, clean design, advanced',
-  '末世废土': 'post apocalyptic, wasteland, dystopian, gritty, abandoned, atmospheric',
-  '太空歌剧': 'space opera, epic, grand, cosmic, starships, alien worlds',
+  // 科幻/未来类（优化适配Nanobanana3）
+  '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech dystopian, rain, holographic signs, Blade Runner aesthetic, night city, cybernetic, digital',
+  '科幻未来': 'science fiction, futuristic, high tech, space age, clean design, advanced technology, future city, space exploration concept art',
+  '废土风格': 'post apocalyptic, wasteland, dystopian, gritty, abandoned, atmospheric, decayed buildings, Mad Max aesthetic, nuclear wasteland',
+  '太空歌剧': 'space opera, epic space, grand cosmic scale, starships, alien worlds, deep space, interstellar, sci-fi concept art, space opera aesthetic',
 
   // 奇幻/魔法类
   '暗黑哥特': 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting',
