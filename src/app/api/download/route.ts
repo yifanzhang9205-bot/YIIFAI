@@ -31,15 +31,16 @@ interface DownloadRequest {
     }>;
   };
   scriptTitle: string;
+  script?: any; // 添加剧本内容
 }
 
 // 打包下载所有资源
 export async function POST(request: NextRequest) {
   try {
     const body: DownloadRequest = await request.json();
-    const { keyframes, videoPrompts, scriptTitle } = body;
+    const { keyframes, videoPrompts, scriptTitle, script } = body;
 
-    console.log('开始打包下载，关键帧数量:', keyframes?.length, '视频提示词:', !!videoPrompts);
+    console.log('开始打包下载，关键帧数量:', keyframes?.length, '视频提示词:', !!videoPrompts, '剧本:', !!script);
 
     if (!keyframes || keyframes.length === 0) {
       return NextResponse.json(
@@ -136,26 +137,67 @@ ${scene.chinesePrompt}
       }
     }
 
-    // 3. 添加说明文件
+    // 3. 添加剧本文件
+    if (script) {
+      let scriptText = '';
+      if (typeof script === 'string') {
+        scriptText = script;
+      } else if (script.title || script.logline || script.scenes) {
+        scriptText = `${script.title || '未命名剧本'}
+
+类型：${script.genre || ''}
+时长：${script.duration || ''}
+一句话梗概：${script.logline || ''}
+情感弧线：${script.emotionalArc || ''}
+
+---
+剧情梗概
+${script.summary || ''}
+
+---
+角色
+${script.characters?.map((char: any) => `${char.name} - ${char.description || ''}`).join('\n') || ''}
+
+---
+场景列表
+${script.scenes?.map((scene: any) => `
+【场景 ${scene.sceneNumber}】${scene.title || ''}
+地点：${scene.location || ''}
+时间：${scene.timeOfDay || ''}
+${scene.description || ''}
+${scene.dialogue ? '对话：' + scene.dialogue : ''}
+`).join('\n') || ''}
+`;
+      }
+
+      if (scriptText) {
+        zip.file('00_剧本.txt', scriptText);
+        console.log('✓ 剧本文件已添加');
+      }
+    }
+
+    // 4. 添加说明文件
     const readmeText = `${scriptTitle} - AI视频生成素材包
 ====================================
 
 文件说明：
 --------
-keyframes/       - 关键帧图片文件夹，每个场景一张图片，文件名格式为 scene_XX.png
-prompts/         - 视频生成提示词文件夹，每个场景一个txt文件，文件名格式为 scene_XX_prompts.txt
+00_剧本.txt        - 完整的剧本内容，包含剧情、角色、场景等详细信息
+keyframes/         - 关键帧图片文件夹，每个场景一张图片，文件名格式为 scene_XX.png
+prompts/           - 视频生成提示词文件夹，每个场景一个txt文件，文件名格式为 scene_XX_prompts.txt
 
 使用方法：
 --------
-1. 查看 keyframes/ 文件夹中的图片，预览每个场景的画面
-2. 查看 prompts/ 文件夹中的提示词，选择适合你的AI视频工具
-3. 复制提示词到 Sora、Runway、Pika、Kling 等工具生成视频
-4. 按场景编号顺序拼接视频，完成最终作品
+1. 查看 00_剧本.txt 了解完整故事内容
+2. 查看 keyframes/ 文件夹中的图片，预览每个场景的画面
+3. 查看 prompts/ 文件夹中的提示词，选择适合你的AI视频工具
+4. 复制提示词到 Sora、Runway、Pika、Kling 等工具生成视频
+5. 按场景编号顺序拼接视频，完成最终作品
 
 提示：
-- 所有关键帧尺寸均为 720×1280（竖屏9:16）
+- 所有关键帧尺寸根据宽高比自动调整（支持 16:9, 9:16, 4:3, 3:4, 1:1）
 - 提示词已经针对不同工具优化，直接使用即可
-- 建议先根据关键帧预览确认画面效果，再生成视频
+- 建议先根据剧本和关键帧预览确认画面效果，再生成视频
 
 生成时间：${new Date().toLocaleString('zh-CN')}
 `;

@@ -85,9 +85,49 @@ export default function SmartCard({ item, selected, onSelect, onUpdate, onSelect
       case 'script':
         return (
           <div className="p-4 text-white text-sm overflow-auto max-h-full">
-            <div className="font-bold mb-2">{item.content.title || '剧本'}</div>
-            <div className="text-gray-300 line-clamp-6">
-              {typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2)}
+            <div className="font-bold mb-2 text-base">{item.content?.title || '剧本'}</div>
+            <div className="text-gray-300 space-y-2">
+              {/* 显示基本信息 */}
+              {item.content?.genre && (
+                <div className="text-xs bg-blue-500/20 inline-block px-2 py-1 rounded">
+                  类型: {item.content.genre}
+                </div>
+              )}
+              {item.content?.logline && (
+                <div className="text-xs text-yellow-400">
+                  {item.content.logline}
+                </div>
+              )}
+              {/* 显示剧情梗概 */}
+              {item.content?.summary && (
+                <div className="text-sm text-gray-300 leading-relaxed">
+                  {item.content.summary}
+                </div>
+              )}
+              {/* 显示角色列表 */}
+              {item.content?.characters && item.content.characters.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <div className="text-xs text-gray-400 mb-2">角色列表：</div>
+                  {item.content.characters.slice(0, 5).map((char: any, idx: number) => (
+                    <div key={idx} className="text-xs text-gray-300 mb-1">
+                      • {char.name}{char.role && ` (${char.role})`}
+                    </div>
+                  ))}
+                  {item.content.characters.length > 5 && (
+                    <div className="text-xs text-gray-500">
+                      ... 还有 {item.content.characters.length - 5} 个角色
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* 显示场景数量 */}
+              {item.content?.scenes && item.content.scenes.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <div className="text-xs text-gray-400">
+                    共 {item.content.scenes.length} 个场景
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

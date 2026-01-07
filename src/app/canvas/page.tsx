@@ -343,11 +343,81 @@ export default function CanvasPage() {
         alert(`已保存 ${selectedItems.length} 个项目到存储`);
         break;
       case 'download':
-        alert(`正在打包下载 ${selectedItems.length} 个项目...`);
+        await handleDownload(selectedItems);
         break;
       case 'regenerate':
         alert(`正在重新生成 ${selectedItems.length} 个项目...`);
         break;
+    }
+  };
+
+  // 处理下载
+  const handleDownload = async (selectedItems: ContentItem[]) => {
+    try {
+      // 收集关键帧图片
+      const keyframes = selectedItems
+        .filter(item => item.type === 'image')
+        .map(item => ({
+          sceneNumber: parseInt(item.number.split('.')[0]) || 1,
+          prompt: item.content?.prompt || item.title,
+          imageUrl: item.images?.[item.selectedImageIndex || 0] || '',
+        }));
+
+      if (keyframes.length === 0) {
+        alert('请至少选择一张图片进行下载');
+        return;
+      }
+
+      // 查找剧本标题
+      const scriptItem = items.find(item => item.type === 'script');
+      const scriptTitle = scriptItem?.content?.title || '未命名剧本';
+      const scriptContent = scriptItem?.content;
+
+      // 查找视频提示词
+      const storyboardItem = items.find(item => item.type === 'storyboard');
+      const videoPrompts = storyboardItem?.content;
+
+      console.log('开始下载:', {
+        keyframes: keyframes.length,
+        scriptTitle,
+        hasScript: !!scriptContent,
+        hasVideoPrompts: !!videoPrompts,
+      });
+
+      // 调用下载 API
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keyframes,
+          videoPrompts,
+          scriptTitle,
+          script: scriptContent,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '下载失败');
+      }
+
+      // 下载文件
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${scriptTitle}_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      alert(`✅ 下载完成！包含 ${keyframes.length} 张关键帧图片`);
+    } catch (error) {
+      console.error('下载失败:', error);
+      alert(`❌ 下载失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
