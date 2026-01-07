@@ -111,7 +111,9 @@ export default function CanvasPage() {
   };
 
   // 处理AI消息
-  const handleAiMessage = async (message: string) => {
+  const handleAiMessage = async (message: string, options?: { artStyle?: string; aspectRatio?: string }) => {
+    const { artStyle = '写实风格', aspectRatio = '3:4' } = options || {};
+
     // 解析用户意图
     if (message.includes('剧本')) {
       // 生成剧本
@@ -121,11 +123,11 @@ export default function CanvasPage() {
       const match = message.match(/(\d+\.\d+)/);
       const sceneNumber = match ? match[1] : '1.1';
       // 生成分镜
-      await generateStoryboard(sceneNumber, message);
+      await generateStoryboard(sceneNumber, message, artStyle, aspectRatio);
     } else if (message.includes('图片') || message.includes('生图')) {
       const match = message.match(/(\d+\.\d+)/);
       const sceneNumber = match ? match[1] : '1.1';
-      await generateImages(sceneNumber, message);
+      await generateImages(sceneNumber, message, artStyle, aspectRatio);
     }
   };
 
@@ -148,7 +150,7 @@ export default function CanvasPage() {
   };
 
   // 生成分镜
-  const generateStoryboard = async (sceneNumber: string, prompt: string) => {
+  const generateStoryboard = async (sceneNumber: string, prompt: string, artStyle: string = '写实风格', aspectRatio: string = '3:4') => {
     try {
       // 构造正确的剧本格式
       const mockScript = {
@@ -158,7 +160,7 @@ export default function CanvasPage() {
         summary: prompt,
         emotionalArc: '平静→紧张→高潮→解决',
         targetAudience: '大众',
-        visualStyle: '写实风格',
+        visualStyle: artStyle,
         scenes: [
           {
             sceneNumber: 1,
@@ -180,7 +182,7 @@ export default function CanvasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           script: mockScript, // 直接传递对象，不是字符串
-          artStyle: '写实风格',
+          artStyle,
         }),
       });
 
@@ -199,12 +201,12 @@ export default function CanvasPage() {
   };
 
   // 生成图片
-  const generateImages = async (sceneNumber: string, prompt: string) => {
+  const generateImages = async (sceneNumber: string, prompt: string, artStyle: string = '写实风格', aspectRatio: string = '3:4') => {
     try {
       // 构造正确的分镜格式
       const mockStoryboard = {
-        artStyle: '写实风格',
-        aspectRatio: '9:16',
+        artStyle,
+        aspectRatio,
         cameraStyle: '固定镜头为主，偶尔推镜头',
         lightingStyle: '自然光',
         scenes: [
@@ -232,9 +234,10 @@ export default function CanvasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storyboard: mockStoryboard, // 直接传递对象，不是字符串
-          artStyle: '写实风格',
+          artStyle,
           characterImages: [],
           imagesPerScene: 1, // 每个场景生成1张图片
+          aspectRatio,
         }),
       });
 
