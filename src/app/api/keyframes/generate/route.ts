@@ -38,8 +38,9 @@ async function submitXiguApiTask(
 
   console.log(`  响应数据:`, JSON.stringify(response.data, null, 2));
 
-  if (response.data.code === 200 && response.data.taskid) {
-    return { taskId: response.data.taskid };
+  // API返回格式：{ success: true, taskId: "xxx", status: "queued" }
+  if (response.data.success === true && response.data.taskId) {
+    return { taskId: response.data.taskId };
   }
 
   throw new Error(`提交任务失败: ${JSON.stringify(response.data)}`);
