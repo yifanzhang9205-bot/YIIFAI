@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, KeyboardEvent } from 'react';
+import { getPreviewUrl, hasPreview } from '@/data/art-style-previews';
 
 interface ChatInputProps {
   onSendMessage: (message: string, options?: { artStyle?: string; aspectRatio?: string }) => void;
@@ -145,35 +146,61 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
                       {category}
                     </div>
                     <div className="p-3 grid grid-cols-3 gap-2">
-                      {styles.map((style) => (
-                        <button
-                          key={style.name}
-                          onClick={() => {
-                            setSelectedArtStyle(style.name);
-                            setShowArtStyleDropdown(false);
-                          }}
-                          className={`group relative overflow-hidden rounded-xl transition-all duration-200 ${
-                            selectedArtStyle === style.name
-                              ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900 shadow-lg shadow-blue-500/20'
-                              : 'hover:shadow-lg hover:scale-[1.02]'
-                          }`}
-                        >
-                          {/* 渐变背景 */}
-                          <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
-                          {/* 选中遮罩 */}
-                          {selectedArtStyle === style.name && (
-                            <div className="absolute inset-0 bg-blue-500/20" />
-                          )}
-                          {/* 文字 */}
-                          <div className="relative p-3">
-                            <div className={`text-sm font-medium truncate ${
-                              selectedArtStyle === style.name ? 'text-white' : 'text-white/90'
-                            }`}>
-                              {style.name}
+                      {styles.map((style) => {
+                        const previewUrl = getPreviewUrl(style.name);
+                        const hasImage = hasPreview(style.name);
+
+                        return (
+                          <button
+                            key={style.name}
+                            onClick={() => {
+                              setSelectedArtStyle(style.name);
+                              setShowArtStyleDropdown(false);
+                            }}
+                            className={`group relative overflow-hidden rounded-xl transition-all duration-200 aspect-[3/4] ${
+                              selectedArtStyle === style.name
+                                ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900 shadow-lg shadow-blue-500/20'
+                                : 'hover:shadow-lg hover:scale-[1.02]'
+                            }`}
+                          >
+                            {/* 预览图片或渐变背景 */}
+                            {hasImage ? (
+                              <>
+                                <img
+                                  src={previewUrl!}
+                                  alt={style.name}
+                                  className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-100 opacity-90"
+                                  loading="lazy"
+                                />
+                                {/* 渐变遮罩，使文字更清晰 */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                              </>
+                            ) : (
+                              <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                            )}
+                            {/* 选中遮罩 */}
+                            {selectedArtStyle === style.name && (
+                              <div className="absolute inset-0 bg-blue-500/30" />
+                            )}
+                            {/* 文字 */}
+                            <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                              <div className={`text-xs font-medium text-center leading-tight ${
+                                selectedArtStyle === style.name ? 'text-white' : 'text-white/95'
+                              }`}>
+                                {style.name}
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      ))}
+                            {/* 选中标记 */}
+                            {selectedArtStyle === style.name && (
+                              <div className="absolute top-2 right-2">
+                                <svg className="w-5 h-5 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getPreviewUrl, hasPreview } from '@/data/art-style-previews';
 
 type Step = 'requirement' | 'script' | 'storyboard' | 'character' | 'keyframes' | 'video-prompts' | 'download';
 
@@ -810,42 +811,62 @@ export default function Home() {
                 选择画风
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                {artStyles.map((style) => (
-                  <button
-                    key={style.name}
-                    onClick={() => setSelectedStyle(style.name)}
-                    className={`group relative rounded-2xl border-2 overflow-hidden transition-all ${
-                      selectedStyle === style.name
-                        ? 'border-blue-500 shadow-xl shadow-blue-500/30 scale-105'
-                        : 'border-slate-200 hover:border-slate-300 hover:scale-105 dark:border-slate-700 dark:hover:border-slate-600'
-                    }`}
-                  >
-                    {/* 渐变背景 */}
-                    <div className={`aspect-square relative overflow-hidden bg-gradient-to-br ${style.gradient}`}>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                      {/* 装饰图案 */}
-                      <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full bg-white/30 blur-2xl" />
-                        <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 rounded-full bg-white/20 blur-xl" />
-                      </div>
-                    </div>
+                {artStyles.map((style) => {
+                  const previewUrl = getPreviewUrl(style.name);
+                  const hasImage = hasPreview(style.name);
 
-                    {/* 画风名称和描述 */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent p-3">
-                      <div className="font-semibold text-white text-sm leading-tight">{style.name}</div>
-                      <div className="text-xs text-white/80 mt-0.5">{style.description}</div>
-                    </div>
-
-                    {/* 选中标记 */}
-                    {selectedStyle === style.name && (
-                      <div className="absolute top-2 right-2 h-7 w-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/30 dark:ring-white/10">
-                        <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
+                  return (
+                    <button
+                      key={style.name}
+                      onClick={() => setSelectedStyle(style.name)}
+                      className={`group relative rounded-2xl border-2 overflow-hidden transition-all ${
+                        selectedStyle === style.name
+                          ? 'border-blue-500 shadow-xl shadow-blue-500/30 scale-105'
+                          : 'border-slate-200 hover:border-slate-300 hover:scale-105 dark:border-slate-700 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      {/* 预览图片或渐变背景 */}
+                      <div className={`aspect-square relative overflow-hidden ${hasImage ? '' : `bg-gradient-to-br ${style.gradient}`}`}>
+                        {hasImage ? (
+                          <>
+                            <img
+                              src={previewUrl!}
+                              alt={style.name}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110"
+                              loading="lazy"
+                            />
+                            {/* 渐变遮罩，使文字更清晰 */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                          </>
+                        ) : (
+                          <>
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                            {/* 装饰图案 */}
+                            <div className="absolute inset-0 opacity-20">
+                              <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full bg-white/30 blur-2xl" />
+                              <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 rounded-full bg-white/20 blur-xl" />
+                            </div>
+                          </>
+                        )}
                       </div>
-                    )}
-                  </button>
-                ))}
+
+                      {/* 画风名称和描述 */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent p-3">
+                        <div className="font-semibold text-white text-sm leading-tight">{style.name}</div>
+                        <div className="text-xs text-white/80 mt-0.5">{style.description}</div>
+                      </div>
+
+                      {/* 选中标记 */}
+                      {selectedStyle === style.name && (
+                        <div className="absolute top-2 right-2 h-7 w-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/30 dark:ring-white/10">
+                          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
