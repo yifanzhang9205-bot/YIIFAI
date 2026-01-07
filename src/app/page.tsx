@@ -131,6 +131,50 @@ export default function Home() {
   // 图片预览状态
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
+  // API配置状态
+  const [showConfig, setShowConfig] = useState(false);
+  const [config, setConfig] = useState({
+    useCustomApi: false,
+    customApiEndpoint: '',
+    customApiKey: '',
+    customImageEndpoint: '',
+    customImageApiKey: '',
+  });
+
+  // 加载配置
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const loadConfig = async () => {
+    try {
+      const response = await fetch('/api/config');
+      const data = await response.json();
+      setConfig(data);
+    } catch (error) {
+      console.error('加载配置失败:', error);
+    }
+  };
+
+  const saveConfig = async () => {
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('配置已保存');
+        setShowConfig(false);
+      }
+    } catch (error) {
+      console.error('保存配置失败:', error);
+      alert('保存配置失败');
+    }
+  };
+
   // 画风定义（包含预览图片路径）
   const artStyles = [
     { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewUrl: '/style-previews/写实风格.jpg' },
@@ -542,6 +586,17 @@ export default function Home() {
                 <span className="text-xl font-bold text-gray-900 dark:text-white">AI 剧本分镜视频生成器</span>
                 <p className="text-xs text-gray-500 dark:text-gray-400">从创意到视频提示词的完整工作流</p>
               </div>
+            </div>
+
+            {/* 设置按钮 */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowConfig(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow"
+              >
+                <span>⚙️</span>
+                <span>设置</span>
+              </button>
             </div>
 
             {/* 步骤指示器 */}
@@ -1453,6 +1508,123 @@ export default function Home() {
                 </svg>
                 创建新剧本
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* API配置弹窗 */}
+        {showConfig && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onClick={() => setShowConfig(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">API 配置</h2>
+                <button
+                  onClick={() => setShowConfig(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <svg className="h-6 w-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <input
+                    type="checkbox"
+                    id="useCustomApi"
+                    checked={config.useCustomApi}
+                    onChange={(e) => setConfig({ ...config, useCustomApi: e.target.checked })}
+                    className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <div>
+                    <label htmlFor="useCustomApi" className="block text-lg font-medium text-gray-900 dark:text-white mb-1">
+                      使用自定义 API
+                    </label>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      启用后，所有 AI 请求将发送到你配置的 API 端点，而非使用内置服务
+                    </p>
+                  </div>
+                </div>
+
+                {config.useCustomApi && (
+                  <div className="space-y-4 pl-2 border-l-4 border-blue-500">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        文本生成 API 端点
+                      </label>
+                      <input
+                        type="text"
+                        value={config.customApiEndpoint}
+                        onChange={(e) => setConfig({ ...config, customApiEndpoint: e.target.value })}
+                        placeholder="https://api.example.com/v1/chat/completions"
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        文本生成 API 密钥
+                      </label>
+                      <input
+                        type="password"
+                        value={config.customApiKey}
+                        onChange={(e) => setConfig({ ...config, customApiKey: e.target.value })}
+                        placeholder="sk-..."
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        图片生成 API 端点
+                      </label>
+                      <input
+                        type="text"
+                        value={config.customImageEndpoint}
+                        onChange={(e) => setConfig({ ...config, customImageEndpoint: e.target.value })}
+                        placeholder="https://api.example.com/v1/images/generations"
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        图片生成 API 密钥
+                      </label>
+                      <input
+                        type="password"
+                        value={config.customImageApiKey}
+                        onChange={(e) => setConfig({ ...config, customImageApiKey: e.target.value })}
+                        placeholder="sk-..."
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setShowConfig(false)}
+                  className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={saveConfig}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/30"
+                >
+                  保存配置
+                </button>
+              </div>
             </div>
           </div>
         )}
