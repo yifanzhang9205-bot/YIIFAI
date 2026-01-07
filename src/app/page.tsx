@@ -639,20 +639,20 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-slate-900/50 dark:to-gray-900">
       {/* 头部 */}
-      <header className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/50 sticky top-0 z-50">
-        <div className="mx-auto max-w-7xl px-4 py-4">
+      <header className="border-b border-slate-200/60 bg-white/70 backdrop-blur-xl dark:border-slate-800/60 dark:bg-gray-950/70 sticky top-0 z-50">
+        <div className="mx-auto max-w-7xl px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/30">
-                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2m0 2v2m0-2h10M7 4H4a1 1 0 00-1 1v14a1 1 0 001 1h16a1 1 0 001-1V5a1 1 0 00-1-1h-3m-9 10l3 3m0 0l3-3m-3 3V8" />
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/20">
+                <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900 dark:text-white">AI 剧本分镜视频生成器</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">从创意到视频提示词的完整工作流</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">AI 剧本分镜视频生成器</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">从创意到视频提示词的完整工作流</p>
               </div>
             </div>
 
@@ -660,15 +660,18 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowConfig(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/80 dark:bg-gray-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700/80 transition-all shadow-sm hover:shadow-md font-medium"
               >
-                <span>⚙️</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
                 <span>设置</span>
               </button>
             </div>
 
             {/* 步骤指示器 */}
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden xl:flex items-center gap-2">
               {[
                 { step: 'requirement', label: '需求', short: '需求' },
                 { step: 'script', label: '剧本', short: '剧本' },
@@ -680,12 +683,12 @@ export default function Home() {
               ].map((item, index) => (
                 <div key={item.step} className="flex items-center gap-2">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all ${
                       currentStep === item.step
-                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/20'
                         : index < getCurrentStepIndex()
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {index < getCurrentStepIndex() ? (
@@ -698,14 +701,14 @@ export default function Home() {
                   </div>
                   <span className={`text-sm font-medium transition-all ${
                     currentStep === item.step
-                      ? 'text-blue-600 dark:text-blue-400'
+                      ? 'text-blue-600 dark:text-blue-400 font-semibold'
                       : index < getCurrentStepIndex()
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-gray-500 dark:text-gray-400'
+                      ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+                      : 'text-slate-500 dark:text-slate-400'
                   }`}>
                     {item.short}
                   </span>
-                  {index < 6 && <div className={`h-px w-6 transition-all ${index < getCurrentStepIndex() ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />}
+                  {index < 6 && <div className={`h-px w-8 transition-all ${index < getCurrentStepIndex() ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`} />}
                 </div>
               ))}
             </div>
@@ -715,21 +718,21 @@ export default function Home() {
           {loading && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{loadingText}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{loadingText}</span>
                 {loadingProgress.total > 0 && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                     {loadingProgress.current} / {loadingProgress.total}
                   </span>
                 )}
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+              <div className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                 {loadingProgress.total > 0 ? (
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+                    className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500 ease-out shadow-lg shadow-blue-500/20"
                     style={{ width: `${(loadingProgress.current / loadingProgress.total) * 100}%` }}
                   />
                 ) : (
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse" />
+                  <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 animate-pulse shadow-lg shadow-blue-500/20" />
                 )}
               </div>
             </div>
@@ -738,15 +741,15 @@ export default function Home() {
       </header>
 
       {/* 主内容 */}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <div className="mb-6 rounded-2xl border border-red-200/80 bg-red-50/80 p-4 dark:border-red-800/80 dark:bg-red-900/20 backdrop-blur-sm">
             <div className="flex items-start gap-3">
               <svg className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-red-900 dark:text-red-300">出错了</p>
+                <p className="font-semibold text-red-900 dark:text-red-300">出错了</p>
                 <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
               </div>
               <button
@@ -763,38 +766,39 @@ export default function Home() {
 
         {/* 步骤1：需求输入 + 画风选择 */}
         {currentStep === 'requirement' && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl dark:border-slate-800/80 dark:bg-gray-900/90 backdrop-blur-sm">
+            <h2 className="mb-2 text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
               开始你的创作
             </h2>
-            <p className="mb-6 text-gray-600 dark:text-gray-400">
+            <p className="mb-8 text-slate-600 dark:text-slate-400 text-lg">
               描述你想要创作的视频内容，AI 将为你生成完整的剧本、分镜和视频提示词
             </p>
 
             {/* 宽高比选择 */}
-            <div className="mb-6">
-              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+            <div className="mb-8">
+              <label className="mb-4 block font-semibold text-slate-700 dark:text-slate-300">
                 选择宽高比
               </label>
               <div className="flex gap-3 flex-wrap">
                 {[
-                  { value: '16:9', label: '16:9 横屏', desc: '适合电视、电脑' },
-                  { value: '9:16', label: '9:16 竖屏', desc: '适合手机、短视频' },
-                  { value: '4:3', label: '4:3 横屏', desc: '传统比例' },
-                  { value: '3:4', label: '3:4 竖屏', desc: '照片比例' },
-                  { value: '1:1', label: '1:1 方形', desc: '社交媒体' },
+                  { value: '16:9', label: '16:9 横屏', desc: '适合电视、电脑', icon: '↔' },
+                  { value: '9:16', label: '9:16 竖屏', desc: '适合手机、短视频', icon: '↕' },
+                  { value: '4:3', label: '4:3 横屏', desc: '传统比例', icon: '▭' },
+                  { value: '3:4', label: '3:4 竖屏', desc: '照片比例', icon: '▯' },
+                  { value: '1:1', label: '1:1 方形', desc: '社交媒体', icon: '◼' },
                 ].map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setAspectRatio(option.value)}
-                    className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                    className={`px-5 py-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 min-w-[140px] ${
                       aspectRatio === option.value
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500 dark:text-gray-300'
+                        ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 shadow-lg shadow-blue-500/20'
+                        : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:text-slate-300'
                     }`}
                   >
+                    <span className="text-2xl">{option.icon}</span>
                     <div className="font-semibold text-sm">{option.label}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{option.desc}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{option.desc}</div>
                   </button>
                 ))}
               </div>

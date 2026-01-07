@@ -354,22 +354,44 @@ export default function CanvasPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-900">
       {/* 顶部工具栏 */}
-      <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🎬</span>
-          <h1 className="text-white font-bold text-lg">AI 视频创作画布</h1>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span>AI 已就绪</span>
+      <div className="h-16 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800/50 flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <div className="text-2xl">🎬</div>
+          <div>
+            <h1 className="text-white font-bold text-lg tracking-tight">AI 视频创作画布</h1>
+            <p className="text-gray-500 text-xs">智能分镜 · 无限创作</p>
           </div>
-          <div>内容数量: <span className="text-white font-medium">{items.length}</span></div>
+        </div>
+        <div className="flex items-center gap-6">
+          {/* AI状态 */}
+          <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-800/60 rounded-xl">
+            <div className="relative">
+              <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+              <span className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-30" />
+            </div>
+            <span className="text-gray-300 text-sm font-medium">AI 已就绪</span>
+          </div>
+
+          {/* 内容计数 */}
+          <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl border border-blue-500/20">
+            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span className="text-gray-300 text-sm">
+              <span className="text-white font-bold">{items.length}</span> 个内容
+            </span>
+          </div>
+
+          {/* 设置按钮 */}
           <button
             onClick={() => setShowConfig(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 rounded-xl text-sm transition-all border border-gray-700/50 hover:border-gray-600/50"
           >
-            ⚙️ 设置
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="font-medium">设置</span>
           </button>
         </div>
       </div>
