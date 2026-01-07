@@ -82,6 +82,20 @@ async function pollXiguApiResult(
   throw new Error(`任务超时：超过${maxAttempts}次轮询仍未完成`);
 }
 
+// 根据宽高比和模式计算分辨率
+function getResolution(aspectRatio: string, fastMode: boolean): string {
+  const resolutionMap: Record<string, { standard: string; fast: string }> = {
+    '16:9': { standard: '1280x720', fast: '512x288' },
+    '9:16': { standard: '720x1280', fast: '288x512' },
+    '4:3': { standard: '1024x768', fast: '432x324' },
+    '3:4': { standard: '720x960', fast: '512x912' },
+    '1:1': { standard: '1024x1024', fast: '512x512' },
+  };
+
+  const resolution = resolutionMap[aspectRatio] || resolutionMap['3:4'];
+  return fastMode ? resolution.fast : resolution.standard;
+}
+
 interface KeyframeRequest {
   storyboard: any; // StoryboardScript
   characterImages: string[]; // 人物设定图URL
@@ -89,6 +103,7 @@ interface KeyframeRequest {
   fastMode?: boolean; // 快速预览模式（低分辨率）
   sceneCharacterMapping?: any[]; // 场景-人物映射（新增）
   imagesPerScene?: number; // 每个场景生成的图片数量，默认4张
+  aspectRatio?: string; // 宽高比：'16:9', '9:16', '4:3', '3:4', '1:1'，默认'3:4'
 }
 
 interface KeyframeScene {
@@ -103,24 +118,83 @@ interface Keyframes {
 
 // 定义画风关键词映射
 const artStyleKeywordsMap: Record<string, string> = {
+  // 写实类
   '写实风格': 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic',
-  '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
+  '电影质感': 'cinematic, film grain, dramatic lighting, professional photography, high detail',
+  '纪录片风格': 'documentary style, natural lighting, authentic, raw, handheld camera feel',
+  '新闻摄影': 'photojournalism, candid, authentic, documentary style, natural lighting',
+  '商业摄影': 'commercial photography, high key lighting, clean, polished, professional',
+
+  // 动漫/漫画类
   '动漫风格': 'anime style, cel shading, vivid colors, manga, detailed',
   '漫画风格': 'manga style, comic style, black and white manga, detailed line art, anime',
+  '赛璐璐风格': 'cel shaded, anime, bold outlines, flat colors, graphic novel style',
+  '吉卜力风格': 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical',
+  '新海诚风格': 'makoto shinkai style, anime, beautiful scenery, detailed backgrounds, emotional lighting',
+  '宫崎骏风格': 'miyazaki hayao style, ghibli, anime, fantasy, hand drawn, magical realism',
+
+  // 卡通/插画类
+  '卡通风格': 'cartoon style, vibrant colors, clean lines, expressive, animated',
+  '迪士尼风格': 'disney animation style, expressive, vibrant colors, clean lines, magical',
+  '皮克斯风格': 'pixar style, 3D animation, expressive, detailed textures, family friendly',
+  '儿童绘本': 'childrens book illustration, whimsical, watercolor, hand drawn, cute, colorful',
+  '矢量插画': 'vector illustration, flat design, clean lines, minimalist, graphic design',
+  '涂鸦风格': 'graffiti style, street art, urban, bold colors, expressive, edgy',
+
+  // 艺术绘画类
   '水彩风格': 'watercolor painting, soft edges, artistic, dreamy, watercolor texture',
   '油画风格': 'oil painting, textured, classic art, oil brushstrokes, rich colors',
-  '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
-  '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing',
-  '吉卜力风格': 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical',
+  '素描风格': 'pencil sketch, charcoal drawing, detailed line art, traditional art, black and white',
+  '粉彩风格': 'pastel art, soft colors, gentle, dreamy, delicate, muted palette',
+  '版画风格': 'printmaking, linocut, woodcut, bold lines, limited colors, traditional art',
+  '波普艺术': 'pop art, bold colors, comic book style, halftone, vibrant, andy warhol style',
+
+  // 传统文化类
   '水墨风格': 'ink painting, traditional chinese art, brush strokes, minimalist, black ink',
-  '赛璐璐风格': 'cel shaded, anime, bold outlines, flat colors, graphic novel style',
-  '蒸汽朋克': 'steampunk, victorian, brass gears, steam, industrial, ornate',
-  '暗黑哥特': 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting',
   '浮世绘风格': 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns',
-  '低多边形': 'low poly, geometric, flat shading, minimalist, 3D render',
-  '黏土动画': 'claymation, clay animation, stop motion, textured, hand crafted',
+  '敦煌壁画': 'dunhuang mural style, ancient chinese art, vibrant colors, gold leaf, religious art',
+  '唐卡风格': 'thangka style, tibetan art, vibrant colors, detailed patterns, religious imagery',
+  '和风': 'japanese style, traditional, minimal, zen, delicate patterns, soft colors',
+
+  // 特定时期/流派
   '复古油画': 'vintage painting, classical art, renaissance, rich textures, aged',
+  '印象派': 'impressionism, soft light, visible brushstrokes, monet style, dreamy atmosphere',
+  '野兽派': 'fauvism, bold colors, expressive, intense, matisse style',
+  '超现实主义': 'surrealism, dreamlike, salvador dali style, bizarre, symbolic',
+  '包豪斯': 'bauhaus style, geometric, minimalist, functional, modernist design',
+
+  // 科幻/未来类
+  '赛博朋克': 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing',
+  '科幻未来': 'science fiction, futuristic, high tech, space age, clean design, advanced',
+  '末世废土': 'post apocalyptic, wasteland, dystopian, gritty, abandoned, atmospheric',
+  '太空歌剧': 'space opera, epic, grand, cosmic, starships, alien worlds',
+
+  // 奇幻/魔法类
+  '暗黑哥特': 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting',
+  '奇幻史诗': 'high fantasy, epic, magical, tolkien style, grand scale, mythical creatures',
+  '魔法少女': 'magical girl anime style, cute, sparkles, pastel colors, anime, dreamy',
+  '童话风格': 'fairy tale style, whimsical, magical, enchanted, storybook illustration',
+
+  // 机械/工业类
+  '蒸汽朋克': 'steampunk, victorian, brass gears, steam, industrial, ornate',
+  '柴油朋克': 'dieselpunk, 1940s retro, industrial, gritty, diesel machinery',
+  '原子朋克': 'atompunk, 1950s retro, atomic age, bright colors, streamlined design',
+
+  // 数字/现代类
+  '像素风格': 'pixel art, 8-bit, retro, blocky, vibrant colors',
+  '低多边形': 'low poly, geometric, flat shading, minimalist, 3D render',
   '霓虹艺术': 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors',
+  '故障艺术': 'glitch art, digital distortion, cyberpunk, vhs effect, corrupted data',
+  '等距视角': 'isometric view, 2.5D, pixel art, clean lines, detailed geometry',
+
+  // 其他风格
+  '黏土动画': 'claymation, clay animation, stop motion, textured, hand crafted',
+  '剪纸艺术': 'paper cut art, papercraft, layered, intricate, colorful',
+  '针线艺术': 'thread art, embroidery style, textile art, detailed stitching',
+  '玻璃艺术': 'stained glass, colorful, translucent, intricate patterns, religious art',
+  '极简主义': 'minimalism, clean, simple, negative space, elegant, modern',
+  '抽象艺术': 'abstract art, geometric, expressive, bold colors, modern',
+  '3D渲染': '3D render, raytracing, realistic materials, studio lighting, high detail',
 };
 
 // 智能角色分析函数 - 识别角色类型、性别、年龄等关键信息
@@ -358,7 +432,7 @@ async function pollAsyncImageResult(
 export async function POST(request: NextRequest) {
   try {
     const body: KeyframeRequest = await request.json();
-    const { storyboard, characterImages, characterDesign, fastMode = false, sceneCharacterMapping } = body;
+    const { storyboard, characterImages, characterDesign, fastMode = false, sceneCharacterMapping, aspectRatio = '3:4' } = body;
 
     if (!storyboard || !storyboard.scenes || storyboard.scenes.length === 0) {
       return NextResponse.json(
@@ -860,7 +934,10 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       console.log(`  使用参考图数量: ${sceneReferenceImages.length}`);
 
       const imagesPerScene = body.imagesPerScene || 1; // 每个场景生成1张图片
+      const resolution = getResolution(aspectRatio, fastMode);
+
       console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片（使用XiguAPI）...`);
+      console.log(`  宽高比: ${aspectRatio}, 分辨率: ${resolution}`);
 
       // 为每个场景生成多张图片
       const sceneImages: string[] = [];
@@ -874,8 +951,8 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
           const { taskId } = await submitXiguApiTask(
             variationPrompt,
             referenceImage,
-            fastMode ? '512x912' : '1K',
-            '3:4'
+            resolution,
+            aspectRatio
           );
 
           console.log(`  ✅ 任务已提交: ${taskId}`);
