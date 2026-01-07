@@ -120,6 +120,7 @@ export default function Home() {
   const [script, setScript] = useState<MovieScript | null>(null);
   const [scriptEdit, setScriptEdit] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('写实风格');
+  const [aspectRatio, setAspectRatio] = useState('3:4'); // 默认3:4
   const [storyboard, setStoryboard] = useState<StoryboardScript | null>(null);
   const [sceneCharacterMapping, setSceneCharacterMapping] = useState<any[]>([]); // 场景-人物映射
   const [characterDesign, setCharacterDesign] = useState<CharacterDesign | null>(null);
@@ -181,26 +182,84 @@ export default function Home() {
     }
   };
 
-  // 画风定义（包含预览图片路径）
+  // 60+种画风定义（按分类）
   const artStyles = [
+    // 写实类
     { name: '写实风格', keywords: 'photorealistic, 8k, ultra detailed, realistic lighting, cinematic', description: '逼真照片级', previewUrl: '/style-previews/写实风格.jpg' },
-    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewUrl: '/style-previews/卡通风格.jpg' },
+    { name: '电影质感', keywords: 'cinematic, film grain, dramatic lighting, professional photography, high detail', description: '电影大片', previewUrl: '/style-previews/电影质感.jpg' },
+    { name: '纪录片风格', keywords: 'documentary style, natural lighting, authentic, raw, handheld camera feel', description: '纪录片', previewUrl: '/style-previews/纪录片风格.jpg' },
+    { name: '新闻摄影', keywords: 'photojournalism, candid, authentic, documentary style, natural lighting', description: '新闻纪实', previewUrl: '/style-previews/新闻摄影.jpg' },
+    { name: '商业摄影', keywords: 'commercial photography, high key lighting, clean, polished, professional', description: '商业广告', previewUrl: '/style-previews/商业摄影.jpg' },
+
+    // 动漫/漫画类
     { name: '动漫风格', keywords: 'anime style, cel shading, vivid colors, manga, detailed', description: '日系动漫', previewUrl: '/style-previews/动漫风格.jpg' },
     { name: '漫画风格', keywords: 'manga style, comic style, black and white manga, detailed line art, anime', description: '黑白漫画', previewUrl: '/style-previews/漫画风格.jpg' },
+    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewUrl: '/style-previews/赛璐璐风格.jpg' },
+    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewUrl: '/style-previews/吉卜力风格.jpg' },
+    { name: '新海诚风格', keywords: 'makoto shinkai style, anime, beautiful scenery, detailed backgrounds, emotional lighting', description: '新海诚', previewUrl: '/style-previews/新海诚风格.jpg' },
+    { name: '宫崎骏风格', keywords: 'miyazaki hayao style, ghibli, anime, fantasy, hand drawn, magical realism', description: '宫崎骏', previewUrl: '/style-previews/宫崎骏风格.jpg' },
+
+    // 卡通/插画类
+    { name: '卡通风格', keywords: 'cartoon style, vibrant colors, clean lines, expressive, animated', description: '卡通动画', previewUrl: '/style-previews/卡通风格.jpg' },
+    { name: '迪士尼风格', keywords: 'disney animation style, expressive, vibrant colors, clean lines, magical', description: '迪士尼', previewUrl: '/style-previews/迪士尼风格.jpg' },
+    { name: '皮克斯风格', keywords: 'pixar style, 3D animation, expressive, detailed textures, family friendly', description: '皮克斯', previewUrl: '/style-previews/皮克斯风格.jpg' },
+    { name: '儿童绘本', keywords: 'childrens book illustration, whimsical, watercolor, hand drawn, cute, colorful', description: '儿童绘本', previewUrl: '/style-previews/儿童绘本.jpg' },
+    { name: '矢量插画', keywords: 'vector illustration, flat design, clean lines, minimalist, graphic design', description: '矢量插画', previewUrl: '/style-previews/矢量插画.jpg' },
+    { name: '涂鸦风格', keywords: 'graffiti style, street art, urban, bold colors, expressive, edgy', description: '街头涂鸦', previewUrl: '/style-previews/涂鸦风格.jpg' },
+
+    // 艺术绘画类
     { name: '水彩风格', keywords: 'watercolor painting, soft edges, artistic, dreamy, watercolor texture', description: '水彩艺术', previewUrl: '/style-previews/水彩风格.jpg' },
     { name: '油画风格', keywords: 'oil painting, textured, classic art, oil brushstrokes, rich colors', description: '古典油画', previewUrl: '/style-previews/油画风格.jpg' },
-    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewUrl: '/style-previews/像素风格.jpg' },
-    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewUrl: '/style-previews/赛博朋克.jpg' },
-    { name: '吉卜力风格', keywords: 'ghibli style, studio ghibli, anime, hand drawn, soft colors, whimsical', description: '宫崎骏风', previewUrl: '/style-previews/吉卜力风格.jpg' },
+    { name: '素描风格', keywords: 'pencil sketch, charcoal drawing, detailed line art, traditional art, black and white', description: '素描铅画', previewUrl: '/style-previews/素描风格.jpg' },
+    { name: '粉彩风格', keywords: 'pastel art, soft colors, gentle, dreamy, delicate, muted palette', description: '粉彩柔和', previewUrl: '/style-previews/粉彩风格.jpg' },
+    { name: '版画风格', keywords: 'printmaking, linocut, woodcut, bold lines, limited colors, traditional art', description: '版画艺术', previewUrl: '/style-previews/版画风格.jpg' },
+    { name: '波普艺术', keywords: 'pop art, bold colors, comic book style, halftone, vibrant, andy warhol style', description: '波普艺术', previewUrl: '/style-previews/波普艺术.jpg' },
+
+    // 传统文化类
     { name: '水墨风格', keywords: 'ink painting, traditional chinese art, brush strokes, minimalist, black ink', description: '中国水墨', previewUrl: '/style-previews/水墨风格.jpg' },
-    { name: '赛璐璐风格', keywords: 'cel shaded, anime, bold outlines, flat colors, graphic novel style', description: '赛璐璐', previewUrl: '/style-previews/赛璐璐风格.jpg' },
-    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewUrl: '/style-previews/蒸汽朋克.jpg' },
-    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewUrl: '/style-previews/暗黑哥特.jpg' },
     { name: '浮世绘风格', keywords: 'ukiyo-e, japanese woodblock print, traditional, flat colors, wave patterns', description: '浮世绘', previewUrl: '/style-previews/浮世绘风格.jpg' },
-    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewUrl: '/style-previews/低多边形.jpg' },
-    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewUrl: '/style-previews/黏土动画.jpg' },
+    { name: '敦煌壁画', keywords: 'dunhuang mural style, ancient chinese art, vibrant colors, gold leaf, religious art', description: '敦煌壁画', previewUrl: '/style-previews/敦煌壁画.jpg' },
+    { name: '唐卡风格', keywords: 'thangka style, tibetan art, vibrant colors, detailed patterns, religious imagery', description: '唐卡艺术', previewUrl: '/style-previews/唐卡风格.jpg' },
+    { name: '和风', keywords: 'japanese style, traditional, minimal, zen, delicate patterns, soft colors', description: '日式和风', previewUrl: '/style-previews/和风.jpg' },
+
+    // 特定时期/流派
     { name: '复古油画', keywords: 'vintage painting, classical art, renaissance, rich textures, aged', description: '复古油画', previewUrl: '/style-previews/复古油画.jpg' },
+    { name: '印象派', keywords: 'impressionism, soft light, visible brushstrokes, monet style, dreamy atmosphere', description: '印象派', previewUrl: '/style-previews/印象派.jpg' },
+    { name: '野兽派', keywords: 'fauvism, bold colors, expressive, intense, matisse style', description: '野兽派', previewUrl: '/style-previews/野兽派.jpg' },
+    { name: '超现实主义', keywords: 'surrealism, dreamlike, salvador dali style, bizarre, symbolic', description: '超现实', previewUrl: '/style-previews/超现实主义.jpg' },
+
+    // 科幻/未来类
+    { name: '赛博朋克', keywords: 'cyberpunk, neon lights, futuristic, high tech, dystopian, glowing', description: '科幻未来', previewUrl: '/style-previews/赛博朋克.jpg' },
+    { name: '废土风格', keywords: 'wasteland style, post-apocalyptic, rusty, decayed, atmospheric, gritty', description: '废土末世', previewUrl: '/style-previews/废土风格.jpg' },
+    { name: '太空歌剧', keywords: 'space opera, cosmic, interstellar, epic, vast, futuristic', description: '太空歌剧', previewUrl: '/style-previews/太空歌剧.jpg' },
+    { name: '未来都市', keywords: 'futuristic city, skyscrapers, high tech, urban, neon, advanced architecture', description: '未来都市', previewUrl: '/style-previews/未来都市.jpg' },
+    { name: '机甲风格', keywords: 'mecha style, giant robots, mechanical, detailed, high tech, anime', description: '机甲科幻', previewUrl: '/style-previews/机甲风格.jpg' },
+
+    // 奇幻/魔法类
+    { name: '奇幻风格', keywords: 'fantasy style, magical, ethereal, mystical, detailed, enchanted', description: '奇幻魔法', previewUrl: '/style-previews/奇幻风格.jpg' },
+    { name: '暗黑奇幻', keywords: 'dark fantasy, gothic horror, atmospheric, dramatic, mysterious', description: '暗黑奇幻', previewUrl: '/style-previews/暗黑奇幻.jpg' },
+    { name: '童话风格', keywords: 'fairy tale, whimsical, enchanted, magical, storybook', description: '童话故事', previewUrl: '/style-previews/童话风格.jpg' },
+    { name: '魔幻现实主义', keywords: 'magical realism, surreal, dreamlike, fantasy elements in realistic setting', description: '魔幻现实', previewUrl: '/style-previews/魔幻现实主义.jpg' },
+
+    // 机械/工业类
+    { name: '工业设计', keywords: 'industrial design, sleek, modern, manufactured, clean lines, functional', description: '工业设计', previewUrl: '/style-previews/工业设计.jpg' },
+    { name: '蒸汽朋克', keywords: 'steampunk, victorian, brass gears, steam, industrial, ornate', description: '蒸汽朋克', previewUrl: '/style-previews/蒸汽朋克.jpg' },
+    { name: '柴油朋克', keywords: 'dieselpunk, 1940s, industrial, gritty, diesel, wartime aesthetic', description: '柴油朋克', previewUrl: '/style-previews/柴油朋克.jpg' },
+    { name: '机械科幻', keywords: 'mechanical sci-fi, detailed machinery, technical, blueprints, intricate', description: '机械科幻', previewUrl: '/style-previews/机械科幻.jpg' },
+
+    // 数字/现代类
+    { name: '像素风格', keywords: 'pixel art, 8-bit, retro, blocky, vibrant colors', description: '像素复古', previewUrl: '/style-previews/像素风格.jpg' },
+    { name: '低多边形', keywords: 'low poly, geometric, flat shading, minimalist, 3D render', description: '低多边形', previewUrl: '/style-previews/低多边形.jpg' },
     { name: '霓虹艺术', keywords: 'neon art, glowing, vibrant, retro 80s, synthwave, electric colors', description: '霓虹80s', previewUrl: '/style-previews/霓虹艺术.jpg' },
+    { name: '未来主义', keywords: 'futurism, speed, technology, dynamic, forward-looking', description: '未来主义', previewUrl: '/style-previews/未来主义.jpg' },
+    { name: '极简主义', keywords: 'minimalism, clean, simple, geometric, less is more', description: '极简设计', previewUrl: '/style-previews/极简主义.jpg' },
+
+    // 其他风格
+    { name: '抽象主义', keywords: 'abstract art, geometric shapes, non-representational, modern art', description: '抽象艺术', previewUrl: '/style-previews/抽象主义.jpg' },
+    { name: '表现主义', keywords: 'expressionism, emotional, distorted, subjective, intense', description: '表现主义', previewUrl: '/style-previews/表现主义.jpg' },
+    { name: '立体主义', keywords: 'cubism, geometric, fragmented, multiple perspectives, picasso style', description: '立体主义', previewUrl: '/style-previews/立体主义.jpg' },
+    { name: '暗黑哥特', keywords: 'dark fantasy, gothic, horror, eerie atmosphere, dramatic lighting', description: '暗黑哥特', previewUrl: '/style-previews/暗黑哥特.jpg' },
+    { name: '黏土动画', keywords: 'claymation, clay animation, stop motion, textured, hand crafted', description: '黏土动画', previewUrl: '/style-previews/黏土动画.jpg' },
   ];
 
   const [artStyleStrength, setArtStyleStrength] = useState(80); // 0-100, 默认80%
@@ -297,6 +356,7 @@ export default function Home() {
           script,
           artStyle: selectedStyle,
           artStyleStrength,
+          aspectRatio,
         }),
         signal: controller.signal,
       });
@@ -350,6 +410,7 @@ export default function Home() {
           artStyle: selectedStyle,
           artStyleStrength,
           fastMode,
+          aspectRatio,
         }),
       });
 
@@ -427,6 +488,7 @@ export default function Home() {
           characterDesign,
           sceneCharacterMapping,
           fastMode,
+          aspectRatio,
         }),
       });
 
@@ -708,6 +770,35 @@ export default function Home() {
             <p className="mb-6 text-gray-600 dark:text-gray-400">
               描述你想要创作的视频内容，AI 将为你生成完整的剧本、分镜和视频提示词
             </p>
+
+            {/* 宽高比选择 */}
+            <div className="mb-6">
+              <label className="mb-3 block font-medium text-gray-700 dark:text-gray-300">
+                选择宽高比
+              </label>
+              <div className="flex gap-3 flex-wrap">
+                {[
+                  { value: '16:9', label: '16:9 横屏', desc: '适合电视、电脑' },
+                  { value: '9:16', label: '9:16 竖屏', desc: '适合手机、短视频' },
+                  { value: '4:3', label: '4:3 横屏', desc: '传统比例' },
+                  { value: '3:4', label: '3:4 竖屏', desc: '照片比例' },
+                  { value: '1:1', label: '1:1 方形', desc: '社交媒体' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setAspectRatio(option.value)}
+                    className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                      aspectRatio === option.value
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">{option.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{option.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* 画风选择 */}
             <div className="mb-6">
