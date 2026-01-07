@@ -76,17 +76,23 @@ async function pollXiguApiResult(
 }
 
 // 根据宽高比和模式计算分辨率
+// XiguAPI支持：'1K', '512x912' 等格式
 function getResolution(aspectRatio: string, fastMode: boolean): string {
-  const resolutionMap: Record<string, { standard: string; fast: string }> = {
-    '16:9': { standard: '1280x720', fast: '512x288' },
-    '9:16': { standard: '720x1280', fast: '288x512' },
-    '4:3': { standard: '1024x768', fast: '432x324' },
-    '3:4': { standard: '720x960', fast: '512x912' },
-    '1:1': { standard: '1024x1024', fast: '512x512' },
-  };
-
-  const resolution = resolutionMap[aspectRatio] || resolutionMap['3:4'];
-  return fastMode ? resolution.fast : resolution.standard;
+  // 标准模式统一使用1K
+  // 快速模式根据宽高比使用不同的分辨率
+  if (fastMode) {
+    const fastResolutionMap: Record<string, string> = {
+      '16:9': '512x288',
+      '9:16': '288x512',
+      '4:3': '512x384',
+      '3:4': '512x912',
+      '1:1': '512x512',
+    };
+    return fastResolutionMap[aspectRatio] || '512x912';
+  } else {
+    // 标准模式都使用1K（API会根据aspectRatio自动调整）
+    return '1K';
+  }
 }
 
 interface CharacterRequest {
