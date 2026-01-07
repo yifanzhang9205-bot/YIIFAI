@@ -48,53 +48,39 @@ async function pollXiguApiResult(
 ): Promise<string> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await axios.get(`${XIGUAPI_CONFIG.endpoint}${taskId}`, {
+      // 使用POST方法轮询任务状态
+      const response = await axios.post(XIGUAPI_CONFIG.endpoint, {
+        taskId,
+      }, {
         headers: {
           'Authorization': `Bearer ${XIGUAPI_CONFIG.apiKey}`,
+          'Content-Type': 'application/json',
         },
       });
 
       const result = response.data;
 
       // 调试：打印完整返回数据
-      if (attempt === 1 || result.status === 'completed' || result.status === 'succeeded') {
+      if (attempt === 1 || result.status === 'success') {
         console.log(`  轮询返回数据:`, JSON.stringify(result, null, 2));
       }
 
-      if (result.status === 'completed' || result.status === 'succeeded') {
-        // 尝试多种可能的图片URL字段
-        if (result.imageUrl) {
-          console.log(`  ✓ 找到图片URL (imageUrl): ${result.imageUrl.substring(0, 50)}...`);
-          return result.imageUrl;
-        }
-        if (result.image_urls?.[0]) {
-          console.log(`  ✓ 找到图片URL (image_urls[0]): ${result.image_urls[0].substring(0, 50)}...`);
-          return result.image_urls[0];
-        }
-        if (result.url) {
-          console.log(`  ✓ 找到图片URL (url): ${result.url.substring(0, 50)}...`);
-          return result.url;
-        }
-        if (result.output?.url) {
-          console.log(`  ✓ 找到图片URL (output.url): ${result.output.url.substring(0, 50)}...`);
-          return result.output.url;
-        }
-        if (result.output?.[0]?.url) {
-          console.log(`  ✓ 找到图片URL (output[0].url): ${result.output[0].url.substring(0, 50)}...`);
-          return result.output[0].url;
-        }
-        if (result.data?.url) {
-          console.log(`  ✓ 找到图片URL (data.url): ${result.data.url.substring(0, 50)}...`);
-          return result.data.url;
+      if (result.success && result.status === 'success') {
+        // 从 result.images[0] 获取图片URL
+        if (result.result?.images?.[0]) {
+          const imageUrl = result.result.images[0];
+          console.log(`  ✓ 找到图片URL (result.images[0]): ${imageUrl.substring(0, 50)}...`);
+          return imageUrl;
         }
         throw new Error(`任务完成但未返回图片URL。返回数据: ${JSON.stringify(result)}`);
       }
 
+      // 检查失败状态
       if (result.status === 'failed' || result.status === 'error') {
-        throw new Error(result.error?.message || result.message || result.error || '任务执行失败');
+        throw new Error(result.message || result.error?.message || '任务执行失败');
       }
 
-      console.log(`  轮询任务 ${taskId}: ${result.status} (${attempt}/${maxAttempts})`);
+      console.log(`  轮询任务 ${taskId}: ${result.status || 'processing'} (${attempt}/${maxAttempts})`);
       await new Promise(resolve => setTimeout(resolve, pollInterval));
     } catch (error: any) {
       if (attempt === maxAttempts) {
