@@ -691,22 +691,69 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       const imagesPerScene = body.imagesPerScene || 1; // 每个场景生成1张图片
       console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片...`);
 
+      // 验证用户输入的模型名称是否有效
+      const validModels = [
+        'doubao-seedream-4-5-251128',
+        'doubao-seedream-4-5',
+        'doubao-seedream-3-5',
+      ];
+
+      let actualModel = imageModel;
+      let useCustomModel = false;
+
+      if (imageModel && !validModels.includes(imageModel)) {
+        console.warn(`⚠️  用户输入的模型 "${imageModel}" 不在已知列表中`);
+        console.log(`   已知模型: ${validModels.join(', ')}`);
+        console.log(`   将尝试使用该模型，如果失败则回退到默认模型`);
+        useCustomModel = true;
+      } else if (imageModel) {
+        console.log(`  ✓ 使用模型: ${imageModel}`);
+      }
+
       // 为每个场景生成多张图片
       const sceneImages: string[] = [];
       for (let i = 0; i < imagesPerScene; i++) {
         // 为每张图片添加一点变化（可选）
         const variationPrompt = i === 0 ? enhancedPrompt : `${enhancedPrompt}, variation ${i + 1}`;
 
-        // 动态设置模型
-        (imageClient as any).model = imageModel;
+        // 设置模型
+        (imageClient as any).model = actualModel;
 
-        const imageResponse = await imageClient.generate({
-          prompt: variationPrompt,
-          image: referenceImage,
-          size: imageSize,
-          watermark: false,
-          responseFormat: 'url',
-        });
+        let imageResponse;
+        try {
+          imageResponse = await imageClient.generate({
+            prompt: variationPrompt,
+            image: referenceImage,
+            size: imageSize,
+            watermark: false,
+            responseFormat: 'url',
+          });
+        } catch (error: any) {
+          console.error(`  ❌ 场景${scene.sceneNumber} - 图片${i+1} 生成失败:`, error.message);
+
+          // 如果是自定义模型且是第一次失败，尝试回退到默认模型
+          if (useCustomModel && i === 0) {
+            console.log(`  🔧 尝试回退到默认模型重新生成...`);
+            try {
+              (imageClient as any).model = 'doubao-seedream-4-5-251128';
+              imageResponse = await imageClient.generate({
+                prompt: variationPrompt,
+                image: referenceImage,
+                size: imageSize,
+                watermark: false,
+                responseFormat: 'url',
+              });
+              actualModel = 'doubao-seedream-4-5-251128'; // 后续图片使用默认模型
+              useCustomModel = false;
+              console.log(`  ✓ 使用默认模型重新生成成功`);
+            } catch (retryError: any) {
+              console.error(`  ❌ 默认模型也失败:`, retryError.message);
+              continue;
+            }
+          } else {
+            continue;
+          }
+        }
 
         const helper = imageClient.getResponseHelper(imageResponse);
 
