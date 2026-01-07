@@ -404,45 +404,65 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
       }
     });
 
-    // 步骤4：为每个人物生成设定图（优化：并发生成）
-    console.log(`开始并发生成 ${characters.length} 个人物设定图...`);
+    // 步骤4：为每个人物生成设定图（分批次生成）
+    console.log(`开始分批次生成 ${characters.length} 个人物设定图...`);
     console.log(`模式: ${fastMode ? '快速预览模式' : '标准模式'}`);
 
-    // 构建所有人物的prompt
-    const characterPrompts = characters.map((character: CharacterInfo) => {
-      const ethnicityMap: Record<string, string> = {
-        '东亚人': 'East Asian',
-        '白人': 'Caucasian',
-        '黑人': 'African',
-        '拉丁裔': 'Latino',
-        '南亚人': 'South Asian',
-      };
+    // API限制：每批次最多生成4张图片
+    const MAX_BATCH_SIZE = 4;
+    const totalCharacters = characters.length;
+    const totalBatches = Math.ceil(totalCharacters / MAX_BATCH_SIZE);
 
-      const ethnicityKeyword: string = ethnicityMap[unifiedEthnicity] || 'mixed race';
+    console.log(`\n📊 分批次生成策略：`);
+    console.log(`   总人物数: ${totalCharacters}`);
+    console.log(`   每批次: ${MAX_BATCH_SIZE}个人物`);
+    console.log(`   总批次数: ${totalBatches}`);
 
-      // 添加明确的性别关键词
-      let genderKeyword = '';
-      const gender = character.gender.toLowerCase();
-      if (gender.includes('男') || gender.includes('male') || gender.includes('man')) {
-        genderKeyword = 'man, male';
-      } else if (gender.includes('女') || gender.includes('female') || gender.includes('woman')) {
-        genderKeyword = 'woman, female';
-      } else {
-        console.warn(`角色${character.name}性别不明确：${character.gender}，默认使用男性`);
-        genderKeyword = 'man, male';
-      }
+    // 分批次生成人物图片
+    const allImageResults: any[] = [];
 
-      // 确保包含所有一致性要素（使用三明治结构强化画风）
-      const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. STRICT: Must follow this art style 100%. `;
-      const forcedArtStyleSuffix = ` Art style: ${artStyle}. Final image must adhere to ${artStyle} aesthetic.`;
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIdx = batchIndex * MAX_BATCH_SIZE;
+      const endIdx = Math.min(startIdx + MAX_BATCH_SIZE, totalCharacters);
+      const batchCharacters = characters.slice(startIdx, endIdx);
 
-      const unifiedPrompt = forcedArtStylePrefix + `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}` + forcedArtStyleSuffix;
+      console.log(`\n🔄 处理批次 ${batchIndex + 1}/${totalBatches} (人物 ${startIdx + 1}-${endIdx})...`);
 
-      return { character, prompt: unifiedPrompt };
-    });
+      // 构建当前批次人物的prompt
+      const batchPrompts = batchCharacters.map((character: CharacterInfo) => {
+        const ethnicityMap: Record<string, string> = {
+          '东亚人': 'East Asian',
+          '白人': 'Caucasian',
+          '黑人': 'African',
+          '拉丁裔': 'Latino',
+          '南亚人': 'South Asian',
+        };
 
-    // 并发生成所有人物图片
-    const imagePromises = characterPrompts.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
+        const ethnicityKeyword: string = ethnicityMap[unifiedEthnicity] || 'mixed race';
+
+        // 添加明确的性别关键词
+        let genderKeyword = '';
+        const gender = character.gender.toLowerCase();
+        if (gender.includes('男') || gender.includes('male') || gender.includes('man')) {
+          genderKeyword = 'man, male';
+        } else if (gender.includes('女') || gender.includes('female') || gender.includes('woman')) {
+          genderKeyword = 'woman, female';
+        } else {
+          console.warn(`角色${character.name}性别不明确：${character.gender}，默认使用男性`);
+          genderKeyword = 'man, male';
+        }
+
+        // 确保包含所有一致性要素（使用三明治结构强化画风）
+        const forcedArtStylePrefix = `CRITICAL ART STYLE: ${currentArtStyleKeywords}. STRICT: Must follow this art style 100%. `;
+        const forcedArtStyleSuffix = ` Art style: ${artStyle}. Final image must adhere to ${artStyle} aesthetic.`;
+
+        const unifiedPrompt = forcedArtStylePrefix + `${genderKeyword}, ${character.prompt}, ${ethnicityKeyword}, ${characterData.unifiedSetting.familyTraits}` + forcedArtStyleSuffix;
+
+        return { character, prompt: unifiedPrompt };
+      });
+
+      // 并发生成当前批次的人物图片
+      const batchImagePromises = batchPrompts.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
       console.log(`生成人物设定图：${character.name}...`);
 
       try {
@@ -468,13 +488,17 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
       }
     });
 
-    // 等待所有图片生成完成
-    const imageResults = await Promise.all(imagePromises);
+    // 等待当前批次完成
+    const batchResults = await Promise.all(batchImagePromises);
+    allImageResults.push(...batchResults);
+
+    console.log(`✅ 批次 ${batchIndex + 1}/${totalBatches} 完成`);
+  }
 
     // 按原始顺序整理图片URL
     const characterImages: string[] = [];
-    imageResults.sort((a: any, b: any) => a.index - b.index);
-    imageResults.forEach((result: any) => characterImages.push(result.imageUrl));
+    allImageResults.sort((a: any, b: any) => a.index - b.index);
+    allImageResults.forEach((result: any) => characterImages.push(result.imageUrl));
 
     console.log(`✓ 所有人物设定图生成完成`);
 

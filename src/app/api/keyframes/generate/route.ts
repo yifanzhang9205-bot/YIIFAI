@@ -736,8 +736,28 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       return sceneCharacterImages.length > 0 ? sceneCharacterImages : (characterImages.length > 0 ? [characterImages[0]] : []);
     };
 
-    // 构建所有场景的生成任务
-    const keyframePromises = storyboard.scenes.map(async (scene: any, index: number) => {
+    // API限制：每批次最多生成4张图片
+    const MAX_BATCH_SIZE = 4;
+
+    // 分批次生成关键帧
+    const keyframeResults: any[] = [];
+    const totalScenes = storyboard.scenes.length;
+    const totalBatches = Math.ceil(totalScenes / MAX_BATCH_SIZE);
+
+    console.log(`\n📊 分批次生成策略：`);
+    console.log(`   总场景数: ${totalScenes}`);
+    console.log(`   每批次: ${MAX_BATCH_SIZE}个场景`);
+    console.log(`   总批次数: ${totalBatches}`);
+
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIdx = batchIndex * MAX_BATCH_SIZE;
+      const endIdx = Math.min(startIdx + MAX_BATCH_SIZE, totalScenes);
+      const batchScenes = storyboard.scenes.slice(startIdx, endIdx);
+
+      console.log(`\n🔄 处理批次 ${batchIndex + 1}/${totalBatches} (场景 ${startIdx + 1}-${endIdx})...`);
+
+      // 构建当前批次的生成任务
+      const batchPromises = batchScenes.map(async (scene: any, batchSceneIndex: number) => {
       console.log(`生成关键帧 - 场景${scene.sceneNumber}...`);
 
       // 根据场景选择对应的人物参考图
@@ -879,10 +899,14 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
 
       console.log(`✓ 完成场景${scene.sceneNumber}，共生成 ${sceneImages.length} 张图片`);
       return { scene, imageUrls: sceneImages };
-    });
+      });
 
-    // 等待所有关键帧生成完成
-    const keyframeResults = await Promise.all(keyframePromises);
+      // 等待当前批次完成
+      const batchResults = await Promise.all(batchPromises);
+      keyframeResults.push(...batchResults);
+
+      console.log(`✅ 批次 ${batchIndex + 1}/${totalBatches} 完成`);
+    }
 
     // 按场景编号顺序整理关键帧
     const keyframes: KeyframeScene[] = keyframeResults.flatMap(result =>
