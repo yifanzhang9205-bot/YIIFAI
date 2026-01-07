@@ -140,6 +140,11 @@ export default function Home() {
     customImageEndpoint: '',
     customImageApiKey: '',
     imageModel: 'doubao-seedream-4-5-251128', // 默认豆包生图模型
+    // 异步图片生成API配置
+    useAsyncImageApi: false,
+    asyncImageApiEndpoint: '',
+    asyncImageApiKey: '',
+    asyncImageModel: 'midjourney',
   });
 
   // 加载配置
@@ -1653,6 +1658,104 @@ export default function Home() {
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         点击快捷按钮选择常用模型，或直接输入自定义模型名称
                       </p>
+                    </div>
+
+                    {/* 异步图片生成API配置（Midjourney等） */}
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            异步图片生成API
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            支持Midjourney等异步任务API
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setConfig({ ...config, useAsyncImageApi: !config.useAsyncImageApi })}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            config.useAsyncImageApi ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              config.useAsyncImageApi ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {config.useAsyncImageApi && (
+                        <div className="space-y-4 pl-2 border-l-4 border-green-500">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                              API 端点
+                            </label>
+                            <input
+                              type="text"
+                              value={config.asyncImageApiEndpoint}
+                              onChange={(e) => setConfig({ ...config, asyncImageApiEndpoint: e.target.value })}
+                              placeholder="https://tasks.xiguapi.tech/"
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                              API 密钥
+                            </label>
+                            <input
+                              type="password"
+                              value={config.asyncImageApiKey}
+                              onChange={(e) => setConfig({ ...config, asyncImageApiKey: e.target.value })}
+                              placeholder="Bearer token"
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                              模型名称
+                            </label>
+                            <input
+                              type="text"
+                              value={config.asyncImageModel}
+                              onChange={(e) => setConfig({ ...config, asyncImageModel: e.target.value })}
+                              placeholder="midjourney"
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setConfig({ ...config, asyncImageModel: 'midjourney' })}
+                                className="text-xs px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                              >
+                                Midjourney
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfig({ ...config, asyncImageModel: 'stable-diffusion' })}
+                                className="text-xs px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
+                              >
+                                Stable Diffusion
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfig({ ...config, asyncImageModel: 'dalle' })}
+                                className="text-xs px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                              >
+                                DALL-E
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
+                            <p className="text-xs text-green-800 dark:text-green-300">
+                              <strong>说明：</strong>此API采用异步任务模式，提交任务后需要轮询结果。生成时间可能较长（30秒-5分钟）。
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

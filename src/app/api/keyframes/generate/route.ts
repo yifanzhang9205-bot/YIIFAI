@@ -1,5 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ImageGenerationClient, Config, LLMClient } from 'coze-coding-dev-sdk';
+import { Config, LLMClient } from 'coze-coding-dev-sdk';
+import axios from 'axios';
+
+// XiguAPI配置
+const XIGUAPI_CONFIG = {
+  endpoint: 'https://tasks.xiguapi.tech/',
+  apiKey: 'w8n-cYYtSMwKtG6ghPyEykfbh8pl',
+  model: 'nanobananapro',
+};
+
+// XiguAPI - 提交图片生成任务
+async function submitXiguApiTask(
+  prompt: string,
+  referenceImage?: string,
+  resolution: string = '1K',
+  aspectRatio: string = '3:4'
+): Promise<{ taskId: string }> {
+  const data: any = {
+    prompt,
+    model: XIGUAPI_CONFIG.model,
+    resolution,
+    aspect_ratio: aspectRatio,
+  };
+
+  if (referenceImage) {
+    data.image_urls = [referenceImage];
+  }
+
+  const response = await axios.post(XIGUAPI_CONFIG.endpoint, data, {
+    headers: {
+      'Authorization': `Bearer ${XIGUAPI_CONFIG.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.data.code === 200 && response.data.taskid) {
+    return { taskId: response.data.taskid };
+  }
+
+  throw new Error(response.data.message || '提交任务失败');
+}
+
+// XiguAPI - 轮询任务结果
+async function pollXiguApiResult(
+  taskId: string,
+  maxAttempts: number = 60,
+  pollInterval: number = 3000
+): Promise<string> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await axios.get(`${XIGUAPI_CONFIG.endpoint}${taskId}`, {
+        headers: {
+          'Authorization': `Bearer ${XIGUAPI_CONFIG.apiKey}`,
+        },
+      });
+
+      const result = response.data;
+
+      if (result.status === 'completed' || result.status === 'succeeded') {
+        if (result.imageUrl || result.image_urls?.[0]) {
+          return result.imageUrl || result.image_urls[0];
+        }
+        throw new Error('任务完成但未返回图片URL');
+      }
+
+      if (result.status === 'failed' || result.status === 'error') {
+        throw new Error(result.error?.message || result.message || '任务执行失败');
+      }
+
+      console.log(`  轮询任务 ${taskId}: ${result.status} (${attempt}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    } catch (error: any) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      console.warn(`  轮询失败 (${attempt}/${maxAttempts}):`, error.message);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+  }
+
+  throw new Error(`任务超时：超过${maxAttempts}次轮询仍未完成`);
+}
 
 interface KeyframeRequest {
   storyboard: any; // StoryboardScript
@@ -191,6 +272,88 @@ function validateScenePrompt(prompt: string, characterDetails: any[]): {
   };
 }
 
+// 异步图片生成API - 提交任务
+async function submitAsyncImageTask(
+  endpoint: string,
+  apiKey: string,
+  prompt: string,
+  model: string,
+  aspectRatio?: string
+): Promise<{ taskId: string }> {
+  const response = await axios.post(
+    endpoint,
+    {
+      params: {
+        prompt,
+        model,
+        aspect_ratio: aspectRatio || '16:9',
+        mode: 'fast',
+        version: 'v7',
+      },
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (response.data.success && response.data.taskId) {
+    return { taskId: response.data.taskId };
+  }
+
+  throw new Error(response.data.message || '提交任务失败');
+}
+
+// 异步图片生成API - 轮询结果
+async function pollAsyncImageResult(
+  endpoint: string,
+  apiKey: string,
+  taskId: string,
+  maxAttempts: number = 30,
+  pollInterval: number = 5000
+): Promise<string> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await axios.get(
+        `${endpoint}/${taskId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+        }
+      );
+
+      const task = response.data.task || response.data;
+
+      if (task.status === 'completed' || task.status === 'succeeded') {
+        // 返回图片URL
+        if (task.imageUrl || task.output?.[0]?.url) {
+          return task.imageUrl || task.output[0].url;
+        }
+        throw new Error('任务完成但未返回图片URL');
+      }
+
+      if (task.status === 'failed' || task.status === 'error') {
+        throw new Error(task.error?.message || '任务执行失败');
+      }
+
+      // 任务仍在进行中，继续轮询
+      console.log(`  轮询任务 ${taskId}: ${task.status} (${attempt}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    } catch (error: any) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      console.warn(`  轮询失败 (${attempt}/${maxAttempts}):`, error.message);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+  }
+
+  throw new Error(`任务超时：超过${maxAttempts}次轮询仍未完成`);
+}
+
 // 生成关键帧
 export async function POST(request: NextRequest) {
   try {
@@ -204,23 +367,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 读取配置，获取用户选择的图片生成模型
-    let imageModel = 'doubao-seedream-4-5-251128'; // 默认模型
-    try {
-      const configResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/config`);
-      const configData = await configResponse.json();
-      if (configData.imageModel && configData.imageModel.trim()) {
-        imageModel = configData.imageModel.trim();
-        console.log(`✓ 使用用户配置的图片生成模型: ${imageModel}`);
-      } else {
-        console.log(`⚠️  用户未配置图片生成模型，使用默认模型: ${imageModel}`);
-      }
-    } catch (error) {
-      console.warn('读取图片生成模型配置失败，使用默认模型:', error);
-    }
+    console.log('✅ 使用XiguAPI默认配置生成图片');
+    console.log(`   模型: ${XIGUAPI_CONFIG.model}`);
+    console.log(`   端点: ${XIGUAPI_CONFIG.endpoint}`);
 
     const config = new Config();
-    const imageClient = new ImageGenerationClient(config);
     const llmClient = new LLMClient(config);
 
     // 步骤1：为每个场景生成优化的关键帧prompt（理解情感和氛围）
@@ -689,26 +840,7 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
       console.log(`  使用参考图数量: ${sceneReferenceImages.length}`);
 
       const imagesPerScene = body.imagesPerScene || 1; // 每个场景生成1张图片
-      console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片...`);
-
-      // 验证用户输入的模型名称是否有效
-      const validModels = [
-        'doubao-seedream-4-5-251128',
-        'doubao-seedream-4-5',
-        'doubao-seedream-3-5',
-      ];
-
-      let actualModel = imageModel;
-      let useCustomModel = false;
-
-      if (imageModel && !validModels.includes(imageModel)) {
-        console.warn(`⚠️  用户输入的模型 "${imageModel}" 不在已知列表中`);
-        console.log(`   已知模型: ${validModels.join(', ')}`);
-        console.log(`   将尝试使用该模型，如果失败则回退到默认模型`);
-        useCustomModel = true;
-      } else if (imageModel) {
-        console.log(`  ✓ 使用模型: ${imageModel}`);
-      }
+      console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片（使用XiguAPI）...`);
 
       // 为每个场景生成多张图片
       const sceneImages: string[] = [];
@@ -716,54 +848,29 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
         // 为每张图片添加一点变化（可选）
         const variationPrompt = i === 0 ? enhancedPrompt : `${enhancedPrompt}, variation ${i + 1}`;
 
-        // 设置模型
-        (imageClient as any).model = actualModel;
-
-        let imageResponse;
         try {
-          imageResponse = await imageClient.generate({
-            prompt: variationPrompt,
-            image: referenceImage,
-            size: imageSize,
-            watermark: false,
-            responseFormat: 'url',
-          });
+          // 1. 提交任务到XiguAPI
+          console.log(`  📤 提交任务到XiguAPI...`);
+          const { taskId } = await submitXiguApiTask(
+            variationPrompt,
+            referenceImage,
+            fastMode ? '512x912' : '1K',
+            '3:4'
+          );
+
+          console.log(`  ✅ 任务已提交: ${taskId}`);
+
+          // 2. 轮询任务结果
+          console.log(`  ⏳ 轮询任务结果...`);
+          const imageUrl = await pollXiguApiResult(taskId, 120, 3000); // 最多6分钟
+
+          sceneImages.push(imageUrl);
+          console.log(`  ✓ 场景${scene.sceneNumber} - 图片${i+1}/${imagesPerScene} 生成成功`);
         } catch (error: any) {
           console.error(`  ❌ 场景${scene.sceneNumber} - 图片${i+1} 生成失败:`, error.message);
-
-          // 如果是自定义模型且是第一次失败，尝试回退到默认模型
-          if (useCustomModel && i === 0) {
-            console.log(`  🔧 尝试回退到默认模型重新生成...`);
-            try {
-              (imageClient as any).model = 'doubao-seedream-4-5-251128';
-              imageResponse = await imageClient.generate({
-                prompt: variationPrompt,
-                image: referenceImage,
-                size: imageSize,
-                watermark: false,
-                responseFormat: 'url',
-              });
-              actualModel = 'doubao-seedream-4-5-251128'; // 后续图片使用默认模型
-              useCustomModel = false;
-              console.log(`  ✓ 使用默认模型重新生成成功`);
-            } catch (retryError: any) {
-              console.error(`  ❌ 默认模型也失败:`, retryError.message);
-              continue;
-            }
-          } else {
-            continue;
-          }
-        }
-
-        const helper = imageClient.getResponseHelper(imageResponse);
-
-        if (!helper.success || helper.imageUrls.length === 0) {
-          console.warn(`场景${scene.sceneNumber}的第${i+1}张图片生成失败，跳过`);
+          // 继续尝试下一张图片
           continue;
         }
-
-        sceneImages.push(helper.imageUrls[0]);
-        console.log(`  ✓ 场景${scene.sceneNumber} - 图片${i+1}/${imagesPerScene} 生成成功`);
       }
 
       if (sceneImages.length === 0) {

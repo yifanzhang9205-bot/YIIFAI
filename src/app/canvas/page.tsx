@@ -72,6 +72,11 @@ export default function CanvasPage() {
     customImageEndpoint: '',
     customImageApiKey: '',
     imageModel: 'doubao-seedream-4-5-251128', // 默认豆包生图模型
+    // 异步图片生成API配置
+    useAsyncImageApi: false,
+    asyncImageApiEndpoint: '',
+    asyncImageApiKey: '',
+    asyncImageModel: 'midjourney',
   });
 
   // 添加新内容
@@ -486,6 +491,88 @@ export default function CanvasPage() {
                     <p className="text-gray-500 text-xs mt-1">
                       点击快捷按钮选择常用模型，或直接输入自定义模型名称
                     </p>
+                  </div>
+
+                  {/* 异步图片生成API配置 */}
+                  <div className="mt-4 pt-4 border-t border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="text-gray-300 text-sm font-medium">异步图片生成API</h4>
+                        <p className="text-gray-500 text-xs">Midjourney等异步任务API</p>
+                      </div>
+                      <button
+                        onClick={() => setConfig({ ...config, useAsyncImageApi: !config.useAsyncImageApi })}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                          config.useAsyncImageApi ? 'bg-blue-600' : 'bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            config.useAsyncImageApi ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {config.useAsyncImageApi && (
+                      <div className="space-y-3 pl-2 border-l-4 border-green-500">
+                        <div>
+                          <label className="text-gray-300 text-xs block mb-1">API 端点</label>
+                          <input
+                            type="text"
+                            value={config.asyncImageApiEndpoint}
+                            onChange={(e) => setConfig({ ...config, asyncImageApiEndpoint: e.target.value })}
+                            placeholder="https://tasks.xiguapi.tech/"
+                            className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-gray-300 text-xs block mb-1">API 密钥</label>
+                          <input
+                            type="password"
+                            value={config.asyncImageApiKey}
+                            onChange={(e) => setConfig({ ...config, asyncImageApiKey: e.target.value })}
+                            placeholder="Bearer token"
+                            className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-gray-300 text-xs block mb-1">模型名称</label>
+                          <input
+                            type="text"
+                            value={config.asyncImageModel}
+                            onChange={(e) => setConfig({ ...config, asyncImageModel: e.target.value })}
+                            placeholder="midjourney"
+                            className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setConfig({ ...config, asyncImageModel: 'midjourney' })}
+                              className="text-xs px-2 py-1 bg-green-900/50 text-green-300 rounded hover:bg-green-900/70"
+                            >
+                              MJ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfig({ ...config, asyncImageModel: 'stable-diffusion' })}
+                              className="text-xs px-2 py-1 bg-teal-900/50 text-teal-300 rounded hover:bg-teal-900/70"
+                            >
+                              SD
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfig({ ...config, asyncImageModel: 'dalle' })}
+                              className="text-xs px-2 py-1 bg-orange-900/50 text-orange-300 rounded hover:bg-orange-900/70"
+                            >
+                              DALL-E
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

@@ -1,5 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LLMClient, Config, ImageGenerationClient } from 'coze-coding-dev-sdk';
+import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import axios from 'axios';
+
+// XiguAPI配置
+const XIGUAPI_CONFIG = {
+  endpoint: 'https://tasks.xiguapi.tech/',
+  apiKey: 'w8n-cYYtSMwKtG6ghPyEykfbh8pl',
+  model: 'nanobananapro',
+};
+
+// XiguAPI - 提交图片生成任务
+async function submitXiguApiTask(
+  prompt: string,
+  resolution: string = '1K',
+  aspectRatio: string = '3:4'
+): Promise<{ taskId: string }> {
+  const response = await axios.post(XIGUAPI_CONFIG.endpoint, {
+    prompt,
+    model: XIGUAPI_CONFIG.model,
+    resolution,
+    aspect_ratio: aspectRatio,
+  }, {
+    headers: {
+      'Authorization': `Bearer ${XIGUAPI_CONFIG.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.data.code === 200 && response.data.taskid) {
+    return { taskId: response.data.taskid };
+  }
+
+  throw new Error(response.data.message || '提交任务失败');
+}
+
+// XiguAPI - 轮询任务结果
+async function pollXiguApiResult(
+  taskId: string,
+  maxAttempts: number = 60,
+  pollInterval: number = 3000
+): Promise<string> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await axios.get(`${XIGUAPI_CONFIG.endpoint}${taskId}`, {
+        headers: {
+          'Authorization': `Bearer ${XIGUAPI_CONFIG.apiKey}`,
+        },
+      });
+
+      const result = response.data;
+
+      if (result.status === 'completed' || result.status === 'succeeded') {
+        if (result.imageUrl || result.image_urls?.[0]) {
+          return result.imageUrl || result.image_urls[0];
+        }
+        throw new Error('任务完成但未返回图片URL');
+      }
+
+      if (result.status === 'failed' || result.status === 'error') {
+        throw new Error(result.error?.message || result.message || '任务执行失败');
+      }
+
+      console.log(`  轮询任务 ${taskId}: ${result.status} (${attempt}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    } catch (error: any) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      console.warn(`  轮询失败 (${attempt}/${maxAttempts}):`, error.message);
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+  }
+
+  throw new Error(`任务超时：超过${maxAttempts}次轮询仍未完成`);
+}
 
 interface CharacterRequest {
   script: any; // MovieScript
@@ -47,7 +121,9 @@ export async function POST(request: NextRequest) {
 
     const config = new Config();
     const llmClient = new LLMClient(config);
-    const imageClient = new ImageGenerationClient(config);
+
+    console.log('✅ 使用XiguAPI默认配置生成人物图片');
+    console.log(`   模型: ${XIGUAPI_CONFIG.model}`);
 
     // 定义画风关键词映射（确保前后一致）
     const artStyleKeywordsMap: Record<string, string> = {
@@ -330,10 +406,7 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
 
     // 步骤4：为每个人物生成设定图（优化：并发生成）
     console.log(`开始并发生成 ${characters.length} 个人物设定图...`);
-
-    // 根据模式选择分辨率
-    const imageSize = fastMode ? '512x912' : '720x1280';
-    console.log(`图片尺寸: ${imageSize} (${fastMode ? '快速预览模式' : '标准模式'})`);
+    console.log(`模式: ${fastMode ? '快速预览模式' : '标准模式'}`);
 
     // 构建所有人物的prompt
     const characterPrompts = characters.map((character: CharacterInfo) => {
@@ -372,20 +445,27 @@ ${analysis.scenes.map((s: any) => `  场景${s.sceneNumber}：${s.location}（${
     const imagePromises = characterPrompts.map(async ({ character, prompt }: { character: CharacterInfo; prompt: string }) => {
       console.log(`生成人物设定图：${character.name}...`);
 
-      const imageResponse = await imageClient.generate({
-        prompt,
-        size: imageSize,
-        watermark: false,
-      });
+      try {
+        // 1. 提交任务到XiguAPI
+        console.log(`  📤 提交任务到XiguAPI...`);
+        const { taskId } = await submitXiguApiTask(
+          prompt,
+          fastMode ? '512x912' : '1K',
+          '3:4'
+        );
 
-      const helper = imageClient.getResponseHelper(imageResponse);
+        console.log(`  ✅ 任务已提交: ${taskId}`);
 
-      if (!helper.success || helper.imageUrls.length === 0) {
-        throw new Error(`生成人物${character.name}设定图失败`);
+        // 2. 轮询任务结果
+        console.log(`  ⏳ 轮询任务结果...`);
+        const imageUrl = await pollXiguApiResult(taskId, 120, 3000); // 最多6分钟
+
+        console.log(`✓ 完成：${character.name}`);
+        return { index: characters.indexOf(character), imageUrl };
+      } catch (error: any) {
+        console.error(`❌ 生成人物${character.name}失败:`, error.message);
+        throw new Error(`生成人物${character.name}设定图失败: ${error.message}`);
       }
-
-      console.log(`✓ 完成：${character.name}`);
-      return { index: characters.indexOf(character), imageUrl: helper.imageUrls[0] };
     });
 
     // 等待所有图片生成完成

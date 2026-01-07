@@ -7,6 +7,11 @@ interface ConfigStorage {
   customImageApiKey?: string;
   useCustomApi?: boolean;
   imageModel?: string; // 图片生成模型
+  // 异步图片生成API配置
+  useAsyncImageApi?: boolean;
+  asyncImageApiEndpoint?: string;
+  asyncImageApiKey?: string;
+  asyncImageModel?: string;
 }
 
 // 简单的内存存储（生产环境应该使用数据库或环境变量）
@@ -43,6 +48,11 @@ export async function POST(request: NextRequest) {
       customImageApiKey: body.customImageApiKey,
       useCustomApi: body.useCustomApi,
       imageModel: body.imageModel || 'doubao-seedream-4-5-251128', // 默认模型
+      // 异步图片生成API配置
+      useAsyncImageApi: body.useAsyncImageApi,
+      asyncImageApiEndpoint: body.asyncImageApiEndpoint,
+      asyncImageApiKey: body.asyncImageApiKey,
+      asyncImageModel: body.asyncImageModel || 'midjourney', // 默认midjourney
     };
 
     return NextResponse.json({
