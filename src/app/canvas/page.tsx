@@ -29,6 +29,50 @@ export default function CanvasPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [messageCount, setMessageCount] = useState(0);
 
+  // 加载配置
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const loadConfig = async () => {
+    try {
+      const response = await fetch('/api/config');
+      const data = await response.json();
+      setConfig(data);
+    } catch (error) {
+      console.error('加载配置失败:', error);
+    }
+  };
+
+  const saveConfig = async () => {
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('配置已保存');
+        setShowConfig(false);
+      }
+    } catch (error) {
+      console.error('保存配置失败:', error);
+      alert('保存配置失败');
+    }
+  };
+
+  // API配置
+  const [showConfig, setShowConfig] = useState(false);
+  const [config, setConfig] = useState({
+    useCustomApi: false,
+    customApiEndpoint: '',
+    customApiKey: '',
+    customImageEndpoint: '',
+    customImageApiKey: '',
+  });
+
   // 添加新内容
   const addContent = (type: ContentType, title: string, content: any, images?: string[]) => {
     setMessageCount(prev => prev + 1);
@@ -184,14 +228,26 @@ export default function CanvasPage() {
           storyboard: mockStoryboard, // 直接传递对象，不是字符串
           artStyle: '写实风格',
           characterImages: [],
+          imagesPerScene: 4, // 每个场景生成4张图片
         }),
       });
 
       const data = await response.json();
       if (data.success && data.keyframes) {
-        const images = data.keyframes.map((kf: any) => kf.imageUrl).filter(Boolean);
-        const subNumber = updateSubNumber(sceneNumber);
-        addContent('image', `图片 ${subNumber}`, {}, images);
+        // 按场景分组图片
+        const sceneImages: Record<number, string[]> = {};
+        data.keyframes.forEach((kf: any) => {
+          if (!sceneImages[kf.sceneNumber]) {
+            sceneImages[kf.sceneNumber] = [];
+          }
+          sceneImages[kf.sceneNumber].push(kf.imageUrl);
+        });
+
+        // 为每个场景创建图片卡片
+        Object.entries(sceneImages).forEach(([sceneNum, images]) => {
+          const subNumber = updateSubNumber(sceneNumber);
+          addContent('image', `场景${sceneNum}图片 ${subNumber}`, {}, images);
+        });
       } else {
         console.error('生成图片失败:', data.error);
         alert(`生成图片失败: ${data.error}`);
@@ -300,8 +356,111 @@ export default function CanvasPage() {
             <span>AI 已就绪</span>
           </div>
           <div>内容数量: <span className="text-white font-medium">{items.length}</span></div>
+          <button
+            onClick={() => setShowConfig(true)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-colors"
+          >
+            ⚙️ 设置
+          </button>
         </div>
       </div>
+
+      {/* 配置面板 */}
+      {showConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-white text-xl font-bold mb-4">API 配置</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="flex items-center gap-2 text-white mb-2">
+                  <input
+                    type="checkbox"
+                    checked={config.useCustomApi}
+                    onChange={(e) => setConfig({ ...config, useCustomApi: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>使用自定义 API</span>
+                </label>
+                <p className="text-gray-500 text-xs">
+                  启用后，所有 AI 请求将发送到你配置的 API 端点
+                </p>
+              </div>
+
+              {config.useCustomApi && (
+                <>
+                  <div>
+                    <label className="text-gray-300 text-sm block mb-1">
+                      文本生成 API 端点
+                    </label>
+                    <input
+                      type="text"
+                      value={config.customApiEndpoint}
+                      onChange={(e) => setConfig({ ...config, customApiEndpoint: e.target.value })}
+                      placeholder="https://api.example.com/v1/chat/completions"
+                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-gray-300 text-sm block mb-1">
+                      文本生成 API 密钥
+                    </label>
+                    <input
+                      type="password"
+                      value={config.customApiKey}
+                      onChange={(e) => setConfig({ ...config, customApiKey: e.target.value })}
+                      placeholder="sk-..."
+                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-gray-300 text-sm block mb-1">
+                      图片生成 API 端点
+                    </label>
+                    <input
+                      type="text"
+                      value={config.customImageEndpoint}
+                      onChange={(e) => setConfig({ ...config, customImageEndpoint: e.target.value })}
+                      placeholder="https://api.example.com/v1/images/generations"
+                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-gray-300 text-sm block mb-1">
+                      图片生成 API 密钥
+                    </label>
+                    <input
+                      type="password"
+                      value={config.customImageApiKey}
+                      onChange={(e) => setConfig({ ...config, customImageApiKey: e.target.value })}
+                      placeholder="sk-..."
+                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowConfig(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={saveConfig}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 画布区域 */}
       <div className="flex-1 relative overflow-hidden">

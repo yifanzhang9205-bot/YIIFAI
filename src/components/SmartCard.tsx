@@ -80,16 +80,22 @@ export default function SmartCard({ item, selected, onSelect, onUpdate, onSelect
           <div className="relative">
             {/* 显示选中的图片 */}
             {item.images && item.images.length > 0 ? (
-              <div className="aspect-video bg-gray-800">
+              <div className="aspect-video bg-gray-800 relative">
                 <img
                   src={item.images[item.selectedImageIndex || 0]}
                   alt="生成的图片"
                   className="w-full h-full object-cover"
                 />
-                {/* 图片编号 */}
+                {/* 图片编号和总数 */}
                 <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                  #{(item.selectedImageIndex || 0) + 1}
+                  #{(item.selectedImageIndex || 0) + 1} / {item.images.length}
                 </div>
+                {/* 提示点击展开 */}
+                {item.images.length > 1 && (
+                  <div className="absolute bottom-2 right-2 bg-blue-600/80 text-white text-xs px-2 py-1 rounded">
+                    点击展开选择
+                  </div>
+                )}
               </div>
             ) : (
               <div className="aspect-video bg-gray-800 flex items-center justify-center text-gray-500">

@@ -7,6 +7,7 @@ interface KeyframeRequest {
   characterDesign: any; // 人物设计信息（包含人物名称和图片索引）
   fastMode?: boolean; // 快速预览模式（低分辨率）
   sceneCharacterMapping?: any[]; // 场景-人物映射（新增）
+  imagesPerScene?: number; // 每个场景生成的图片数量，默认4张
 }
 
 interface KeyframeScene {
@@ -672,33 +673,54 @@ ${characters.map((c: any) => `- ${c.name}：${c.gender}，${c.ethnicity}，${c.a
 
       console.log(`  使用参考图数量: ${sceneReferenceImages.length}`);
 
-      const imageResponse = await imageClient.generate({
-        prompt: enhancedPrompt,
-        image: referenceImage,
-        size: imageSize,
-        watermark: false,
-        responseFormat: 'url',
-      });
+      const imagesPerScene = body.imagesPerScene || 4; // 每个场景生成4张图片
+      console.log(`  为场景${scene.sceneNumber}生成 ${imagesPerScene} 张图片...`);
 
-      const helper = imageClient.getResponseHelper(imageResponse);
+      // 为每个场景生成多张图片
+      const sceneImages: string[] = [];
+      for (let i = 0; i < imagesPerScene; i++) {
+        // 为每张图片添加一点变化（可选）
+        const variationPrompt = i === 0 ? enhancedPrompt : `${enhancedPrompt}, variation ${i + 1}`;
 
-      if (!helper.success || helper.imageUrls.length === 0) {
-        throw new Error(`生成场景${scene.sceneNumber}关键帧失败`);
+        const imageResponse = await imageClient.generate({
+          prompt: variationPrompt,
+          image: referenceImage,
+          size: imageSize,
+          watermark: false,
+          responseFormat: 'url',
+        });
+
+        const helper = imageClient.getResponseHelper(imageResponse);
+
+        if (!helper.success || helper.imageUrls.length === 0) {
+          console.warn(`场景${scene.sceneNumber}的第${i+1}张图片生成失败，跳过`);
+          continue;
+        }
+
+        sceneImages.push(helper.imageUrls[0]);
+        console.log(`  ✓ 场景${scene.sceneNumber} - 图片${i+1}/${imagesPerScene} 生成成功`);
       }
 
-      console.log(`✓ 完成场景${scene.sceneNumber}`);
-      return { scene, imageUrl: helper.imageUrls[0] };
+      if (sceneImages.length === 0) {
+        throw new Error(`生成场景${scene.sceneNumber}关键帧失败：所有图片生成均失败`);
+      }
+
+      console.log(`✓ 完成场景${scene.sceneNumber}，共生成 ${sceneImages.length} 张图片`);
+      return { scene, imageUrls: sceneImages };
     });
 
     // 等待所有关键帧生成完成
     const keyframeResults = await Promise.all(keyframePromises);
 
     // 按场景编号顺序整理关键帧
-    const keyframes: KeyframeScene[] = keyframeResults.map(result => ({
-      sceneNumber: result.scene.sceneNumber,
-      prompt: result.scene.prompt,
-      imageUrl: result.imageUrl,
-    }));
+    const keyframes: KeyframeScene[] = keyframeResults.flatMap(result =>
+      (result as any).imageUrls.map((imageUrl: string, index: number) => ({
+        sceneNumber: result.scene.sceneNumber,
+        prompt: result.scene.prompt,
+        imageUrl: imageUrl,
+        variationIndex: index, // 标记是第几张图片
+      }))
+    );
 
     console.log(`✓ 所有关键帧生成完成`);
 
