@@ -100,11 +100,36 @@ export default function CanvasPage() {
   // 生成分镜
   const generateStoryboard = async (sceneNumber: string, prompt: string) => {
     try {
+      // 构造正确的剧本格式
+      const mockScript = {
+        title: '自定义分镜',
+        genre: '剧情',
+        logline: prompt,
+        summary: prompt,
+        emotionalArc: '平静→紧张→高潮→解决',
+        targetAudience: '大众',
+        visualStyle: '写实风格',
+        scenes: [
+          {
+            sceneNumber: 1,
+            location: '未知场景',
+            timeOfDay: '白天',
+            mood: '紧张',
+            characters: ['人物A'],
+            action: prompt,
+            dialogue: '',
+            emotionalBeat: '情感节拍',
+            visualHook: '视觉钩子',
+            duration: '5秒',
+          }
+        ],
+      };
+
       const response = await fetch('/api/storyboard/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          script: JSON.stringify({ scenes: [{ sceneNumber: 1, description: prompt }] }),
+          script: mockScript, // 直接传递对象，不是字符串
           artStyle: '写实风格',
         }),
       });
@@ -113,20 +138,50 @@ export default function CanvasPage() {
       if (data.success) {
         const subNumber = updateSubNumber(sceneNumber);
         addContent('storyboard', `分镜 ${subNumber}`, data.storyboard);
+      } else {
+        console.error('生成分镜失败:', data.error);
+        alert(`生成分镜失败: ${data.error}`);
       }
     } catch (error) {
       console.error('生成分镜失败:', error);
+      alert('生成分镜失败，请稍后重试');
     }
   };
 
   // 生成图片
   const generateImages = async (sceneNumber: string, prompt: string) => {
     try {
+      // 构造正确的分镜格式
+      const mockStoryboard = {
+        artStyle: '写实风格',
+        aspectRatio: '9:16',
+        cameraStyle: '固定镜头为主，偶尔推镜头',
+        lightingStyle: '自然光',
+        scenes: [
+          {
+            sceneNumber: 1,
+            shotType: '中景',
+            cameraAngle: '平视',
+            cameraMovement: '固定',
+            focalLength: '标准',
+            depthOfField: '中景深',
+            composition: '三分法',
+            characterPosition: '画面中央',
+            lighting: '自然光',
+            colorTemperature: '中性',
+            mood: '平静',
+            transition: '切',
+            prompt: prompt, // 用户输入的提示词
+            videoPrompt: prompt,
+          }
+        ],
+      };
+
       const response = await fetch('/api/keyframes/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          storyboard: JSON.stringify({ scenes: [{ sceneNumber: 1, prompt: prompt }] }),
+          storyboard: mockStoryboard, // 直接传递对象，不是字符串
           artStyle: '写实风格',
           characterImages: [],
         }),
@@ -137,9 +192,13 @@ export default function CanvasPage() {
         const images = data.keyframes.map((kf: any) => kf.imageUrl).filter(Boolean);
         const subNumber = updateSubNumber(sceneNumber);
         addContent('image', `图片 ${subNumber}`, {}, images);
+      } else {
+        console.error('生成图片失败:', data.error);
+        alert(`生成图片失败: ${data.error}`);
       }
     } catch (error) {
       console.error('生成图片失败:', error);
+      alert('生成图片失败，请稍后重试');
     }
   };
 
