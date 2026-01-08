@@ -382,7 +382,25 @@ export default function CanvasPage() {
         scriptTitle,
         hasScript: !!scriptContent,
         hasVideoPrompts: !!videoPrompts,
+        scriptType: typeof scriptContent,
       });
+
+      // 准备请求数据，添加错误处理
+      let requestBody;
+      try {
+        requestBody = {
+          keyframes,
+          videoPrompts,
+          scriptTitle,
+          script: scriptContent,
+        };
+        // 测试 JSON 序列化
+        JSON.stringify(requestBody);
+      } catch (e) {
+        console.error('JSON 序列化失败:', e);
+        alert('下载失败：剧本数据格式不正确');
+        return;
+      }
 
       // 调用下载 API
       const response = await fetch('/api/download', {
@@ -390,17 +408,18 @@ export default function CanvasPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          keyframes,
-          videoPrompts,
-          scriptTitle,
-          script: scriptContent,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '下载失败');
+        const errorText = await response.text();
+        console.error('API 错误:', errorText);
+        try {
+          const error = JSON.parse(errorText);
+          throw new Error(error.error || '下载失败');
+        } catch (e) {
+          throw new Error(errorText || '下载失败');
+        }
       }
 
       // 下载文件

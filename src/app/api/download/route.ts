@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     const { keyframes, videoPrompts, scriptTitle, script } = body;
 
     console.log('开始打包下载，关键帧数量:', keyframes?.length, '视频提示词:', !!videoPrompts, '剧本:', !!script);
+    console.log('剧本类型:', typeof script);
 
     if (!keyframes || keyframes.length === 0) {
       return NextResponse.json(
@@ -139,40 +140,66 @@ ${scene.chinesePrompt}
 
     // 3. 添加剧本文件
     if (script) {
-      let scriptText = '';
-      if (typeof script === 'string') {
-        scriptText = script;
-      } else if (script.title || script.logline || script.scenes) {
-        scriptText = `${script.title || '未命名剧本'}
+      try {
+        let scriptText = '';
+        if (typeof script === 'string') {
+          scriptText = script;
+        } else if (typeof script === 'object') {
+          // 处理对象类型的剧本
+          const title = script.title || '未命名剧本';
+          const genre = script.genre || '';
+          const duration = script.duration || '';
+          const logline = script.logline || '';
+          const emotionalArc = script.emotionalArc || '';
+          const summary = script.summary || '';
 
-类型：${script.genre || ''}
-时长：${script.duration || ''}
-一句话梗概：${script.logline || ''}
-情感弧线：${script.emotionalArc || ''}
+          scriptText = `${title}
+
+类型：${genre}
+时长：${duration}
+一句话梗概：${logline}
+情感弧线：${emotionalArc}
 
 ---
 剧情梗概
-${script.summary || ''}
+${summary}
 
 ---
+
 角色
-${script.characters?.map((char: any) => `${char.name} - ${char.description || ''}`).join('\n') || ''}
+${script.characters?.map((char: any) => {
+            const charName = char?.name || '未命名';
+            const charDesc = char?.description ? ' - ' + String(char.description) : '';
+            return `${charName}${charDesc}`;
+          }).join('\n') || '无'}
 
 ---
-场景列表
-${script.scenes?.map((scene: any) => `
-【场景 ${scene.sceneNumber}】${scene.title || ''}
-地点：${scene.location || ''}
-时间：${scene.timeOfDay || ''}
-${scene.description || ''}
-${scene.dialogue ? '对话：' + scene.dialogue : ''}
-`).join('\n') || ''}
-`;
-      }
 
-      if (scriptText) {
-        zip.file('00_剧本.txt', scriptText);
-        console.log('✓ 剧本文件已添加');
+场景列表
+${script.scenes?.map((scene: any) => {
+            const sceneNum = scene?.sceneNumber || '?';
+            const sceneTitle = scene?.title || '未命名';
+            const sceneLoc = scene?.location || '未知';
+            const sceneTime = scene?.timeOfDay || '未知';
+            const sceneAction = scene?.action || scene?.description || '';
+            const sceneDialogue = scene?.dialogue ? '对话：' + String(scene.dialogue) : '';
+            return `【场景 ${sceneNum}】${sceneTitle}
+地点：${sceneLoc}
+时间：${sceneTime}
+${sceneAction}
+${sceneDialogue}`;
+          }).join('\n\n') || '无'}
+`;
+        }
+
+        if (scriptText) {
+          zip.file('00_剧本.txt', scriptText);
+          console.log('✓ 剧本文件已添加');
+        }
+      } catch (error) {
+        console.error('生成剧本文件失败:', error);
+        // 失败时添加一个说明文件
+        zip.file('00_剧本_ERROR.txt', '剧本文件生成失败，请手动查看剧本卡片内容。');
       }
     }
 
